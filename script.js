@@ -1,559 +1,380 @@
 /**
- * SPORTBAR 23 y 12 - Script optimizado
- * Funcionalidades principales para mostrar menú y contacto
+ * SPORTBAR 23 Y 12 - BOT DE RESERVAS
+ * Versión 2.0 - Conversacional, sin base de datos
  */
 
 (function() {
     'use strict';
-    
-    // Estado de la aplicación
-    const AppState = {
-        currentModalImage: null,
-        currentModalTitle: null,
-        isModalOpen: false
+
+    // ===== CONFIGURACIÓN =====
+    const CONFIG = {
+        whatsappNumber: '5358873126',
+        welcomeMessage: '🏈 ¡Hola! Soy SportBot, tu asistente virtual de SPORTBAR 23 y 12.\n\nVoy a ayudarte a reservar tu mesa en 5 pasos rápidos. ¿Cómo te llamas?',
+        steps: [
+            { id: 'name', question: '¿Cómo te llamás?', validator: (input) => input.trim().length >= 2 },
+            { id: 'people', question: '¿Para cuántas personas?', validator: (input) => /^[1-9][0-9]?$|^10$/.test(input.trim()), errorMsg: 'Por favor, ingresá un número válido (1-10)' },
+            { id: 'date', question: '¿Qué día querés venir? (ej: 25/12 o mañana)', validator: (input) => input.trim().length >= 3 },
+            { id: 'time', question: '¿A qué hora? (ej: 20:00)', validator: (input) => /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(input.trim()) || input.toLowerCase().includes(':' ), errorMsg: 'Por favor, ingresá una hora válida (ej: 20:00)' },
+            { id: 'table', question: '¿Tenés alguna mesa preferida? (Si no, decí "cualquiera")', validator: (input) => true, optional: true }
+        ]
     };
-    
-    // Inicialización
+
+    // ===== ESTADO DEL BOT =====
+    const BotState = {
+        currentStep: 0,
+        bookingData: {
+            name: '',
+            people: '',
+            date: '',
+            time: '',
+            table: 'cualquiera',
+            timestamp: new Date().toLocaleString('es-ES')
+        },
+        isWaitingResponse: false,
+        history: []
+    };
+
+    // ===== ELEMENTOS DOM =====
+    const DOM = {
+        messagesArea: document.getElementById('messagesArea'),
+        userInput: document.getElementById('userInput'),
+        sendButton: document.getElementById('sendButton'),
+        resetButton: document.getElementById('resetBot'),
+        typingIndicator: document.getElementById('typingIndicator'),
+        chatContainer: document.getElementById('chatContainer')
+    };
+
+    // ===== INICIALIZACIÓN =====
     function init() {
-        console.log('🏈 SPORTBAR 23 y 12 - Inicializando...');
+        loadSavedData();
+        setupEventListeners();
+        focusInput();
         
-        // Cargar funcionalidades críticas
-        loadCoreFeatures();
-        
-        // Configurar cuando el DOM esté listo
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', setupFeatures);
-        } else {
-            setupFeatures();
-        }
-        
-        // Configurar cuando la página cargue completamente
-        window.addEventListener('load', () => {
-            console.log('✅ Página cargada completamente');
-            initLazyLoading();
-            setupAnimations();
-        });
-    }
-    
-    // Cargar funcionalidades principales
-    function loadCoreFeatures() {
-        setupSmoothScroll();
-        setupImageModal();
-        setupContactButtons();
-        setupAccessibility();
-    }
-    
-    // Configurar todas las características
-    function setupFeatures() {
-        setupMenuButtons();
-        setupMapButton();
-        setupHoverEffects();
-        setupScrollIndicator();
-        setupSoccerBallAnimation();
-    }
-    
-    // Configurar scroll suave
-    function setupSmoothScroll() {
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function(e) {
-                const href = this.getAttribute('href');
-                
-                if (href === '#' || href === '#!') return;
-                
-                const target = document.querySelector(href);
-                if (target) {
-                    e.preventDefault();
-                    scrollToElement(target);
-                }
-            });
-        });
-    }
-    
-    // Función de scroll suave
-    function scrollToElement(element) {
-        const targetPosition = element.getBoundingClientRect().top + window.pageYOffset;
-        const startPosition = window.pageYOffset;
-        const distance = targetPosition - startPosition;
-        const duration = Math.min(800, Math.abs(distance) * 0.5);
-        let startTime = null;
-        
-        function animation(currentTime) {
-            if (startTime === null) startTime = currentTime;
-            const timeElapsed = currentTime - startTime;
-            const run = easeInOutCubic(timeElapsed, startPosition, distance, duration);
-            
-            window.scrollTo(0, run);
-            
-            if (timeElapsed < duration) {
-                requestAnimationFrame(animation);
-            }
-        }
-        
-        requestAnimationFrame(animation);
-    }
-    
-    // Función de easing cúbica
-    function easeInOutCubic(t, b, c, d) {
-        t /= d / 2;
-        if (t < 1) return c / 2 * t * t * t + b;
-        t -= 2;
-        return c / 2 * (t * t * t + 2) + b;
-    }
-    
-    // Configurar modal de imágenes
-    function setupImageModal() {
-        const modal = document.getElementById('imageModal');
-        const closeBtn = document.getElementById('closeModal');
-        const viewButtons = document.querySelectorAll('.view-image-btn');
-        
-        if (!modal) return;
-        
-        // Abrir modal al hacer clic en botones de ver imagen
-        viewButtons.forEach(btn => {
-            btn.addEventListener('click', function() {
-                const imageSrc = this.getAttribute('data-image');
-                const imageTitle = this.getAttribute('data-title');
-                
-                openImageModal(imageSrc, imageTitle);
-            });
-        });
-        
-        // Cerrar modal
-        if (closeBtn) {
-            closeBtn.addEventListener('click', closeImageModal);
-        }
-        
-        // Cerrar modal al hacer clic fuera
-        modal.addEventListener('click', function(e) {
-            if (e.target === modal) {
-                closeImageModal();
-            }
-        });
-        
-        // Cerrar modal con tecla Escape
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && AppState.isModalOpen) {
-                closeImageModal();
-            }
-        });
-    }
-    
-    // Abrir modal de imagen
-    function openImageModal(imageSrc, title) {
-        const modal = document.getElementById('imageModal');
-        const modalImage = document.getElementById('modalImage');
-        const modalTitle = document.getElementById('modalTitle');
-        
-        if (!modal || !modalImage || !modalTitle) return;
-        
-        // Mostrar estado de carga
-        modalImage.style.opacity = '0.5';
-        modalImage.src = '';
-        
-        // Configurar imagen
-        const img = new Image();
-        img.onload = function() {
-            modalImage.src = imageSrc;
-            modalImage.alt = title;
-            modalImage.style.opacity = '1';
-            modalTitle.textContent = title;
-            modal.classList.add('active');
-            AppState.isModalOpen = true;
-            document.body.style.overflow = 'hidden';
-            
-            // Anunciar para accesibilidad
-            announce(`Imagen ${title} abierta. Use las flechas para navegar o Escape para cerrar.`);
-        };
-        
-        img.onerror = function() {
-            showNotification('Error al cargar la imagen', 'error');
-            modalImage.style.opacity = '1';
-        };
-        
-        img.src = imageSrc;
-    }
-    
-    // Cerrar modal de imagen
-    function closeImageModal() {
-        const modal = document.getElementById('imageModal');
-        
-        if (modal) {
-            modal.classList.remove('active');
-            AppState.isModalOpen = false;
-            document.body.style.overflow = 'auto';
-            
-            // Anunciar para accesibilidad
-            announce('Modal de imagen cerrado.');
+        // Si no hay historial, mostrar mensaje de bienvenida
+        if (BotState.history.length === 0) {
+            addBotMessage(CONFIG.welcomeMessage);
         }
     }
-    
-    // Configurar botones de contacto
-    function setupContactButtons() {
-        // Botón de mapa
-        const mapBtn = document.getElementById('btnMapa');
-        if (mapBtn) {
-            mapBtn.addEventListener('click', function() {
-                showNotification('🔍 Opción de mapa no disponible temporalmente. Visítanos en 23 y 12, Vedado, La Habana.', 'info');
-            });
-        }
-        
-        // Botón de teléfono
-        const phoneBtn = document.querySelector('.phone-btn');
-        if (phoneBtn) {
-            phoneBtn.addEventListener('click', function(e) {
-                // Analytics si está configurado
-                if (typeof gtag !== 'undefined') {
-                    gtag('event', 'phone_click', {
-                        'event_category': 'engagement',
-                        'event_label': 'phone_call'
-                    });
-                }
-                
-                // Mostrar confirmación en dispositivos móviles
-                if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-                    if (!confirm('¿Deseas llamar al +53 5887 3126?')) {
-                        e.preventDefault();
-                    }
-                }
-            });
-        }
-    }
-    
-    // Configurar botones del menú
-    function setupMenuButtons() {
-        // Todos los botones que no son enlaces
-        document.querySelectorAll('.btn:not([href]), .btn[href="#"]').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                if (!this.hasAttribute('href') || this.getAttribute('href') === '#') {
-                    e.preventDefault();
-                    
-                    const buttonText = this.textContent.trim();
-                    const buttonType = this.classList.contains('primary') ? 'primary' : 
-                                     this.classList.contains('secondary') ? 'secondary' : 'default';
-                    
-                    // Manejar diferentes tipos de botones
-                    switch(buttonText) {
-                        case 'Ver Menú Completo':
-                            scrollToElement(document.getElementById('menu'));
-                            announce('Navegando a la sección de menú');
-                            break;
-                        case 'Llámanos Ahora':
-                            // Ya manejado por el enlace tel:
-                            break;
-                        default:
-                            showNotification(`Función "${buttonText}" activada`, 'info');
-                    }
-                }
-            });
-        });
-    }
-    
-    // Configurar botón de mapa
-    function setupMapButton() {
-        const mapButtons = document.querySelectorAll('#btnMapa, .btn[href*="maps.google"]');
-        
-        mapButtons.forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                if (this.id === 'btnMapa' || !this.hasAttribute('href')) {
-                    e.preventDefault();
-                    showNotification('📍 Opción de mapa no disponible. Nuestra dirección: 23 y 12, Vedado, La Habana, Cuba.', 'info');
-                }
-            });
-        });
-    }
-    
-    // Configurar efectos hover
-    function setupHoverEffects() {
-        // Usar event delegation para mejor rendimiento
-        document.addEventListener('mouseover', function(e) {
-            const target = e.target;
-            
-            // Añadir clase hover a elementos específicos
-            if (target.matches('.feature, .gallery-item, .highlight-item, .tag, .location-feature')) {
-                target.classList.add('hover');
-            }
+
+    // ===== EVENT LISTENERS =====
+    function setupEventListeners() {
+        // Enviar mensaje
+        DOM.sendButton.addEventListener('click', sendMessage);
+        DOM.userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
         });
         
-        document.addEventListener('mouseout', function(e) {
-            const target = e.target;
-            
-            // Remover clase hover
-            if (target.matches('.feature, .gallery-item, .highlight-item, .tag, .location-feature')) {
-                target.classList.remove('hover');
-            }
+        // Reset bot
+        DOM.resetButton.addEventListener('click', resetConversation);
+        
+        // Focus input al cargar
+        DOM.userInput.addEventListener('blur', () => {
+            setTimeout(focusInput, 10);
         });
     }
-    
-    // Configurar scroll indicator
-    function setupScrollIndicator() {
-        const scrollIndicator = document.querySelector('.scroll-indicator');
-        if (!scrollIndicator) return;
+
+    // ===== ENVIAR MENSAJE =====
+    function sendMessage() {
+        const input = DOM.userInput.value.trim();
+        if (!input || BotState.isWaitingResponse) return;
         
-        let lastScrollY = window.scrollY;
-        let ticking = false;
+        // Mostrar mensaje del usuario
+        addUserMessage(input);
+        DOM.userInput.value = '';
         
-        window.addEventListener('scroll', function() {
-            lastScrollY = window.scrollY;
-            
-            if (!ticking) {
-                window.requestAnimationFrame(function() {
-                    // Ocultar/mostrar indicator
-                    if (lastScrollY > 100) {
-                        scrollIndicator.style.opacity = '0';
-                        scrollIndicator.style.pointerEvents = 'none';
-                    } else {
-                        scrollIndicator.style.opacity = '1';
-                        scrollIndicator.style.pointerEvents = 'auto';
-                    }
-                    
-                    ticking = false;
-                });
-                
-                ticking = true;
-            }
-        }, { passive: true });
-    }
-    
-    // Configurar animación de pelota de fútbol
-    function setupSoccerBallAnimation() {
-        const soccerBall = document.querySelector('.soccer-ball .ball');
-        if (!soccerBall) return;
+        // Procesar respuesta
+        BotState.isWaitingResponse = true;
+        showTypingIndicator();
         
-        // Verificar preferencias de reducción de movimiento
-        const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-        if (mediaQuery.matches) return;
-        
-        let rotation = 0;
-        let animationId;
-        
-        function animate() {
-            rotation += 0.3;
-            soccerBall.style.transform = `rotate(${rotation}deg)`;
-            animationId = requestAnimationFrame(animate);
-        }
-        
-        // Iniciar animación
-        animate();
-        
-        // Pausar animación cuando no es visible
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    if (!animationId) {
-                        animate();
-                    }
-                } else {
-                    if (animationId) {
-                        cancelAnimationFrame(animationId);
-                        animationId = null;
-                    }
-                }
-            });
-        }, { threshold: 0.1 });
-        
-        observer.observe(soccerBall);
-    }
-    
-    // Configurar accesibilidad
-    function setupAccessibility() {
-        // Mejorar navegación por teclado
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Tab') {
-                document.documentElement.classList.add('keyboard-navigation');
-            }
-        });
-        
-        document.addEventListener('mousedown', function() {
-            document.documentElement.classList.remove('keyboard-navigation');
-        });
-        
-        // Configurar región viva para anuncios
-        const liveRegion = document.createElement('div');
-        liveRegion.setAttribute('aria-live', 'polite');
-        liveRegion.setAttribute('aria-atomic', 'true');
-        liveRegion.className = 'sr-only';
-        document.body.appendChild(liveRegion);
-        
-        // Función para anunciar mensajes
-        window.announce = function(message) {
-            liveRegion.textContent = message;
-            setTimeout(() => {
-                liveRegion.textContent = '';
-            }, 1000);
-        };
-    }
-    
-    // Inicializar lazy loading
-    function initLazyLoading() {
-        if ('IntersectionObserver' in window) {
-            const lazyImages = document.querySelectorAll('img[loading="lazy"]');
-            
-            const imageObserver = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        const img = entry.target;
-                        img.src = img.dataset.src || img.src;
-                        img.classList.add('loaded');
-                        imageObserver.unobserve(img);
-                    }
-                });
-            });
-            
-            lazyImages.forEach(img => imageObserver.observe(img));
-        }
-    }
-    
-    // Configurar animaciones
-    function setupAnimations() {
-        // Animar elementos de checklist
-        const checkItems = document.querySelectorAll('.check-item');
-        checkItems.forEach((item, index) => {
-            item.style.setProperty('--delay', `${index * 0.1}s`);
-            item.classList.add('animate-in');
-        });
-        
-        // Configurar observador de intersección
-        if ('IntersectionObserver' in window) {
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('animate-in');
-                    }
-                });
-            }, {
-                threshold: 0.1,
-                rootMargin: '50px'
-            });
-            
-            // Observar elementos para animar
-            document.querySelectorAll('.feature, .gallery-item, .highlight-item, .info-item').forEach(el => {
-                observer.observe(el);
-            });
-        }
-    }
-    
-    // Mostrar notificación
-    function showNotification(message, type = 'info') {
-        // Crear elemento de notificación
-        const notification = document.createElement('div');
-        notification.className = `notification notification-${type}`;
-        notification.setAttribute('role', 'alert');
-        notification.setAttribute('aria-live', 'assertive');
-        
-        // Icono según tipo
-        let icon = 'info-circle';
-        if (type === 'success') icon = 'check-circle';
-        if (type === 'error') icon = 'exclamation-circle';
-        if (type === 'warning') icon = 'exclamation-triangle';
-        
-        notification.innerHTML = `
-            <i class="fas fa-${icon}"></i>
-            <span>${message}</span>
-        `;
-        
-        // Estilos
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: ${type === 'success' ? '#2a9d8f' : 
-                        type === 'error' ? '#e63946' : 
-                        type === 'warning' ? '#f4a261' : '#3a86ff'};
-            color: white;
-            padding: 1rem 1.5rem;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            z-index: 10000;
-            animation: slideIn 0.3s ease;
-            max-width: 400px;
-        `;
-        
-        // Añadir al documento
-        document.body.appendChild(notification);
-        
-        // Remover después de 4 segundos
         setTimeout(() => {
-            notification.style.animation = 'slideOut 0.3s ease';
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
-            }, 300);
-        }, 4000);
-        
-        // Anunciar para accesibilidad
-        announce(message);
+            processResponse(input);
+            hideTypingIndicator();
+            BotState.isWaitingResponse = false;
+            focusInput();
+        }, 800);
     }
-    
-    // Añadir estilos CSS para animaciones de notificación
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
+
+    // ===== PROCESAR RESPUESTA =====
+    function processResponse(input) {
+        const step = CONFIG.steps[BotState.currentStep];
+        
+        // Validar respuesta
+        if (step && !step.validator(input) && !step.optional) {
+            addBotMessage(step.errorMsg || 'Por favor, ingresá un valor válido.');
+            return;
         }
         
-        @keyframes slideOut {
-            from {
-                transform: translateX(0);
-                opacity: 1;
-            }
-            to {
-                transform: translateX(100%);
-                opacity: 0;
-            }
+        // Guardar respuesta
+        switch (BotState.currentStep) {
+            case 0: // Nombre
+                BotState.bookingData.name = input;
+                saveToLocalStorage('sportbar_user_name', input);
+                addBotMessage(`Mucho gusto, ${input} 👋`);
+                break;
+            case 1: // Personas
+                BotState.bookingData.people = input;
+                break;
+            case 2: // Fecha
+                BotState.bookingData.date = input;
+                break;
+            case 3: // Hora
+                BotState.bookingData.time = input;
+                break;
+            case 4: // Mesa
+                BotState.bookingData.table = input;
+                break;
         }
         
-        .check-item.animate-in {
-            animation: fadeInLeft 0.5s ease var(--delay, 0s) both;
-        }
+        // Avanzar al siguiente paso o finalizar
+        BotState.currentStep++;
         
-        @keyframes fadeInLeft {
-            from {
-                opacity: 0;
-                transform: translateX(-20px);
+        if (BotState.currentStep < CONFIG.steps.length) {
+            // Preguntar siguiente
+            addBotMessage(CONFIG.steps[BotState.currentStep].question);
+            
+            // Si es el paso de mesa, sugerir opciones
+            if (BotState.currentStep === 4) {
+                setTimeout(() => {
+                    addTableOptions();
+                }, 500);
             }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
+        } else {
+            // Reserva completa
+            showBookingSummary();
         }
+    }
+
+    // ===== OPCIONES DE MESA =====
+    function addTableOptions() {
+        const optionsDiv = document.createElement('div');
+        optionsDiv.className = 'options-container';
         
-        .animate-in {
-            animation: fadeInUp 0.6s ease both;
-        }
+        const tables = ['31', '33', '27', '45', 'cualquiera'];
+        tables.forEach(table => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerHTML = `<i class="fas fa-chair"></i> Mesa ${table}`;
+            btn.onclick = () => {
+                addUserMessage(`Mesa ${table}`);
+                BotState.bookingData.table = table;
+                
+                showTypingIndicator();
+                setTimeout(() => {
+                    hideTypingIndicator();
+                    BotState.currentStep++;
+                    showBookingSummary();
+                }, 800);
+            };
+            optionsDiv.appendChild(btn);
+        });
         
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message bot-message';
+        messageDiv.innerHTML = `
+            <div class="message-avatar"><i class="fas fa-robot"></i></div>
+            <div class="message-content"></div>
+        `;
+        messageDiv.querySelector('.message-content').appendChild(optionsDiv);
+        
+        DOM.messagesArea.appendChild(messageDiv);
+        scrollToBottom();
+    }
+
+    // ===== MOSTRAR RESUMEN DE RESERVA =====
+    function showBookingSummary() {
+        const data = BotState.bookingData;
+        
+        const summaryHtml = `
+            <div class="message bot-message">
+                <div class="message-avatar"><i class="fas fa-robot"></i></div>
+                <div class="message-content">
+                    <p><strong>✅ ¡Todo listo, ${data.name}!</strong></p>
+                    <p>Confirmá los datos de tu reserva:</p>
+                    
+                    <div class="booking-summary">
+                        <div class="summary-item">
+                            <i class="fas fa-user"></i>
+                            <span>Nombre: <strong>${data.name}</strong></span>
+                        </div>
+                        <div class="summary-item">
+                            <i class="fas fa-users"></i>
+                            <span>Personas: <strong>${data.people}</strong></span>
+                        </div>
+                        <div class="summary-item">
+                            <i class="fas fa-calendar"></i>
+                            <span>Fecha: <strong>${data.date}</strong></span>
+                        </div>
+                        <div class="summary-item">
+                            <i class="fas fa-clock"></i>
+                            <span>Hora: <strong>${data.time}</strong></span>
+                        </div>
+                        <div class="summary-item">
+                            <i class="fas fa-chair"></i>
+                            <span>Mesa preferida: <strong>${data.table}</strong></span>
+                        </div>
+                    </div>
+                    
+                    <p>📱 Hacé clic en el botón de abajo para enviar la reserva a nuestro WhatsApp.</p>
+                    
+                    <div class="options-container">
+                        <a href="https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(generateWhatsAppMessage())}" 
+                           target="_blank" 
+                           class="option-btn" 
+                           style="background: #25D366; color: white; border: none; width: 100%; justify-content: center;">
+                            <i class="fab fa-whatsapp"></i> ENVIAR RESERVA POR WHATSAPP
+                        </a>
+                    </div>
+                    
+                    <p style="margin-top: 1rem; font-size: 0.85rem; color: #adb5bd;">
+                        <i class="fas fa-clock"></i> Recibirás confirmación en minutos
+                    </p>
+                </div>
+            </div>
+        `;
+        
+        DOM.messagesArea.insertAdjacentHTML('beforeend', summaryHtml);
+        scrollToBottom();
+        
+        // Guardar en localStorage
+        saveBookingToHistory();
+    }
+
+    // ===== GENERAR MENSAJE DE WHATSAPP =====
+    function generateWhatsAppMessage() {
+        const data = BotState.bookingData;
+        const fecha = new Date().toLocaleDateString('es-ES');
+        
+        return `🍻 *NUEVA RESERVA - SPORTBAR 23 Y 12*
+        
+👤 *Nombre:* ${data.name}
+👥 *Personas:* ${data.people}
+📅 *Fecha:* ${data.date}
+⏰ *Hora:* ${data.time}
+📍 *Mesa preferida:* ${data.table}
+
+📆 *Reserva generada:* ${fecha}
+✅ *Confirmar disponibilidad*`;
+    }
+
+    // ===== GUARDAR EN HISTORIAL =====
+    function saveBookingToHistory() {
+        try {
+            const history = JSON.parse(localStorage.getItem('sportbar_booking_history') || '[]');
+            history.push({
+                ...BotState.bookingData,
+                completed: true,
+                timestamp: new Date().toISOString()
+            });
+            
+            // Mantener solo últimas 10 reservas
+            if (history.length > 10) history.shift();
+            
+            localStorage.setItem('sportbar_booking_history', JSON.stringify(history));
+            localStorage.setItem('sportbar_last_booking', JSON.stringify(BotState.bookingData));
+        } catch (e) {
+            console.log('Error guardando historial');
         }
-    `;
-    document.head.appendChild(style);
-    
-    // Inicializar aplicación
+    }
+
+    // ===== CARGAR DATOS GUARDADOS =====
+    function loadSavedData() {
+        try {
+            const savedName = localStorage.getItem('sportbar_user_name');
+            if (savedName) {
+                BotState.bookingData.name = savedName;
+            }
+            
+            const lastBooking = localStorage.getItem('sportbar_last_booking');
+            if (lastBooking) {
+                const data = JSON.parse(lastBooking);
+                // No cargar automáticamente, solo para referencia
+            }
+        } catch (e) {
+            console.log('Error cargando datos');
+        }
+    }
+
+    // ===== GUARDAR EN LOCALSTORAGE =====
+    function saveToLocalStorage(key, value) {
+        try {
+            localStorage.setItem(key, value);
+        } catch (e) {
+            console.log('Error guardando en localStorage');
+        }
+    }
+
+    // ===== REINICIAR CONVERSACIÓN =====
+    function resetConversation() {
+        BotState.currentStep = 0;
+        BotState.bookingData = {
+            name: localStorage.getItem('sportbar_user_name') || '',
+            people: '',
+            date: '',
+            time: '',
+            table: 'cualquiera',
+            timestamp: new Date().toLocaleString('es-ES')
+        };
+        BotState.isWaitingResponse = false;
+        
+        // Limpiar mensajes
+        DOM.messagesArea.innerHTML = '';
+        
+        // Mensaje de bienvenida
+        addBotMessage(CONFIG.welcomeMessage);
+        
+        // Si hay nombre guardado, sugerirlo
+        if (BotState.bookingData.name) {
+            setTimeout(() => {
+                addBotMessage(`¿Eres ${BotState.bookingData.name}? (Si es así, escribí "sí" o tu nombre si es otro)`);
+            }, 1000);
+        }
+    }
+
+    // ===== FUNCIONES AUXILIARES =====
+    function addBotMessage(text) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message bot-message';
+        messageDiv.innerHTML = `
+            <div class="message-avatar"><i class="fas fa-robot"></i></div>
+            <div class="message-content">
+                <p>${text.replace(/\n/g, '<br>')}</p>
+            </div>
+        `;
+        DOM.messagesArea.appendChild(messageDiv);
+        scrollToBottom();
+    }
+
+    function addUserMessage(text) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message user-message';
+        messageDiv.innerHTML = `
+            <div class="message-avatar"><i class="fas fa-user"></i></div>
+            <div class="message-content">
+                <p>${text}</p>
+            </div>
+        `;
+        DOM.messagesArea.appendChild(messageDiv);
+        scrollToBottom();
+    }
+
+    function showTypingIndicator() {
+        DOM.typingIndicator.classList.add('active');
+        scrollToBottom();
+    }
+
+    function hideTypingIndicator() {
+        DOM.typingIndicator.classList.remove('active');
+    }
+
+    function scrollToBottom() {
+        DOM.chatContainer.scrollTop = DOM.chatContainer.scrollHeight;
+    }
+
+    function focusInput() {
+        DOM.userInput.focus();
+    }
+
+    // ===== INICIAR =====
     init();
-    
-    // Exportar funciones para debugging
-    window.SportBarApp = {
-        openImageModal,
-        closeImageModal,
-        showNotification,
-        scrollToElement
-    };
-    
+
 })();
