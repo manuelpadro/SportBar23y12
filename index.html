@@ -2,21 +2,24 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>SPORTBAR 23 y 12 - El Lugar de los Fans del Deporte</title>
     <meta name="description" content="SportBar en La Habana: cerveza fría, comida deliciosa, partidos en vivo y atmósfera inolvidable para los verdaderos fans del deporte">
     <meta name="keywords" content="sportbar, deporte, La Habana, cerveza, partidos en vivo, comida, 23 y 12">
+    <meta name="author" content="SPORTBAR 23 y 12">
     
-    <!-- Preconnect para fuentes y recursos externos -->
+    <!-- Preconnect para recursos externos -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     
-    <!-- Fuentes mejoradas: Montserrat + Open Sans -->
+    <!-- Fuentes optimizadas -->
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
     
-    <!-- Font Awesome -->
+    <!-- Font Awesome 6 (íconos) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- Estilos principales -->
     <link rel="stylesheet" href="style.css">
     
     <!-- Preload de imágenes críticas -->
@@ -25,11 +28,11 @@
     <link rel="preload" href="imagenes/menu-comida.jpg" as="image">
 </head>
 <body>
-    <!-- Sección 1: Hero / Portada -->
+    <!-- ===== HERO SECTION ===== -->
     <section class="hero" id="inicio">
         <div class="hero-overlay">
             <div class="hero-content">
-                <!-- Pelota de fútbol decorativa -->
+                <!-- Pelota de fútbol animada -->
                 <div class="soccer-ball" aria-hidden="true">
                     <div class="ball">
                         <div class="pentagon"></div>
@@ -54,23 +57,27 @@
                         <i class="fas fa-beer" aria-hidden="true"></i> Cerveza fría, 
                         <i class="fas fa-utensils" aria-hidden="true"></i> comida deliciosa, 
                         <i class="fas fa-tv" aria-hidden="true"></i> partidos en vivo y 
-                        <i class="fas fa-heart" aria-hidden="true"></i> una atmósfera inolvidable en el corazón de La Habana
+                        <i class="fas fa-heart" aria-hidden="true"></i> una atmósfera inolvidable
                     </p>
                 </div>
                 
-                <!-- Botón para ver menú -->
-                <a href="#menu" class="btn hero-cta" aria-label="Ver nuestro menú completo">
-                    <i class="fas fa-utensils"></i> Ver Nuestro Menú
-                </a>
+                <div class="hero-buttons">
+                    <a href="#menu" class="btn primary">
+                        <i class="fas fa-utensils"></i> Ver Menú
+                    </a>
+                    <a href="bot/bot.html" class="btn secondary">
+                        <i class="fas fa-robot"></i> Reservar con Bot
+                    </a>
+                </div>
             </div>
             
-            <a href="#partidos" class="scroll-indicator" aria-label="Desplazarse hacia abajo">
+            <a href="#partidos" class="scroll-indicator" aria-label="Desplazarse">
                 <i class="fas fa-chevron-down"></i>
             </a>
         </div>
     </section>
 
-    <!-- Sección 2: Partidos en Vivo -->
+    <!-- ===== PARTIDOS EN VIVO ===== -->
     <section class="section live-games" id="partidos">
         <div class="container">
             <div class="section-header">
@@ -82,139 +89,75 @@
             
             <div class="checklist">
                 <div class="check-item checked">
-                    <div class="check-box" aria-hidden="true">
-                        <i class="fas fa-check"></i>
-                    </div>
-                    <span class="check-text">
-                        <i class="fas fa-beer" aria-hidden="true"></i> Cerveza Helada
-                    </span>
+                    <div class="check-box"><i class="fas fa-check"></i></div>
+                    <span class="check-text"><i class="fas fa-beer"></i> Cerveza Helada</span>
                 </div>
-                
                 <div class="check-item checked">
-                    <div class="check-box" aria-hidden="true">
-                        <i class="fas fa-check"></i>
-                    </div>
-                    <span class="check-text">
-                        <i class="fas fa-hamburger" aria-hidden="true"></i> Comida Increíble
-                    </span>
+                    <div class="check-box"><i class="fas fa-check"></i></div>
+                    <span class="check-text"><i class="fas fa-hamburger"></i> Comida Increíble</span>
                 </div>
-                
                 <div class="check-item checked">
-                    <div class="check-box" aria-hidden="true">
-                        <i class="fas fa-check"></i>
-                    </div>
-                    <span class="check-text">
-                        <i class="fas fa-tv" aria-hidden="true"></i> Pantallas 4K
-                    </span>
+                    <div class="check-box"><i class="fas fa-check"></i></div>
+                    <span class="check-text"><i class="fas fa-tv"></i> Pantallas 4K</span>
                 </div>
-                
                 <div class="check-item checked">
-                    <div class="check-box" aria-hidden="true">
-                        <i class="fas fa-check"></i>
-                    </div>
-                    <span class="check-text">
-                        <i class="fas fa-clock" aria-hidden="true"></i> Abierto 24/7
-                    </span>
+                    <div class="check-box"><i class="fas fa-check"></i></div>
+                    <span class="check-text"><i class="fas fa-clock"></i> Abierto 24/7</span>
                 </div>
-            </div>
-            
-            <div class="divider"></div>
-            
-            <div class="action-buttons">
-                <a href="#menu" class="btn primary">
-                    <i class="fas fa-book"></i> Ver Menú Completo
-                </a>
             </div>
             
             <div class="visit-info">
-                <h3><i class="fas fa-map-marker-alt" aria-hidden="true"></i> Visítanos Hoy</h3>
+                <h3><i class="fas fa-map-marker-alt"></i> Visítanos Hoy</h3>
                 <p>
-                    <i class="fas fa-location-dot" aria-hidden="true"></i> 23 y 12, La Habana, Cuba • 
-                    <i class="fas fa-paw" aria-hidden="true"></i> Pet Friendly • 
-                    <i class="fas fa-ticket" aria-hidden="true"></i> Sin Cargo de Entrada
+                    <i class="fas fa-location-dot"></i> 23 y 12, La Habana • 
+                    <i class="fas fa-paw"></i> Pet Friendly • 
+                    <i class="fas fa-ticket"></i> Sin Cargo de Entrada
                 </p>
             </div>
         </div>
     </section>
 
-    <!-- Sección 3: ¿Por qué SportBar? -->
+    <!-- ===== ¿POR QUÉ SPORTBAR? ===== -->
     <section class="section why-sportbar" id="porque">
         <div class="container">
             <div class="section-header">
                 <h2 class="section-title">¿POR QUÉ SPORTBAR 23 Y 12?</h2>
-                <p class="section-subtitle">
-                    No somos solo un bar deportivo. Somos el hogar de los verdaderos fans.
-                </p>
+                <p class="section-subtitle">No somos solo un bar deportivo. Somos el hogar de los verdaderos fans.</p>
             </div>
-            
-            <div class="divider"></div>
             
             <div class="features-grid">
                 <div class="feature">
-                    <div class="feature-icon" aria-hidden="true">
-                        <i class="fas fa-tv"></i>
-                    </div>
+                    <div class="feature-icon"><i class="fas fa-tv"></i></div>
                     <h3 class="feature-title">PARTIDOS EN VIVO</h3>
-                    <p class="feature-description">
-                        Pantallas gigantes HD con los mejores partidos de fútbol y deportes internacionales.
-                        <span class="highlight">Nunca te pierdas un gol.</span>
-                    </p>
+                    <p class="feature-description">Pantallas gigantes HD con los mejores partidos.<span class="highlight">Nunca te pierdas un gol.</span></p>
                 </div>
-                
                 <div class="feature">
-                    <div class="feature-icon" aria-hidden="true">
-                        <i class="fas fa-beer"></i>
-                    </div>
+                    <div class="feature-icon"><i class="fas fa-beer"></i></div>
                     <h3 class="feature-title">CERVEZA HELADA</h3>
-                    <p class="feature-description">
-                        Cervezas bien frías y cócteles perfectos para acompañar cada momento del partido.
-                        <span class="highlight">Siempre al punto justo.</span>
-                    </p>
+                    <p class="feature-description">Cervezas bien frías y cócteles perfectos.<span class="highlight">Siempre al punto justo.</span></p>
                 </div>
-                
                 <div class="feature">
-                    <div class="feature-icon" aria-hidden="true">
-                        <i class="fas fa-pizza-slice"></i>
-                    </div>
+                    <div class="feature-icon"><i class="fas fa-pizza-slice"></i></div>
                     <h3 class="feature-title">COMIDA DELICIOSA</h3>
-                    <p class="feature-description">
-                        Pizzas, tacos de cerdo, croquetas de camarón y más.
-                        <span class="highlight">Comida que hace que cada partido sea aún mejor.</span>
-                    </p>
+                    <p class="feature-description">Pizzas, tacos de cerdo, croquetas y más.<span class="highlight">Comida que enamora.</span></p>
                 </div>
-                
                 <div class="feature">
-                    <div class="feature-icon" aria-hidden="true">
-                        <i class="fas fa-users"></i>
-                    </div>
+                    <div class="feature-icon"><i class="fas fa-users"></i></div>
                     <h3 class="feature-title">COMUNIDAD</h3>
-                    <p class="feature-description">
-                        Únete a la mejor comunidad de fans del deporte.
-                        <span class="highlight">Amigos, risas y momentos inolvidables.</span>
-                    </p>
+                    <p class="feature-description">La mejor comunidad de fans del deporte.<span class="highlight">Amigos, risas y momentos únicos.</span></p>
                 </div>
             </div>
             
-            <div class="divider"></div>
-            
             <div class="tags">
-                <span class="tag">
-                    <i class="fas fa-paw" aria-hidden="true"></i> Pet Friendly
-                </span>
-                <span class="tag">
-                    <i class="fas fa-utensils" aria-hidden="true"></i> Dine-In
-                </span>
-                <span class="tag">
-                    <i class="fas fa-wifi" aria-hidden="true"></i> WiFi Gratis
-                </span>
-                <span class="tag">
-                    <i class="fas fa-clock" aria-hidden="true"></i> 24/7
-                </span>
+                <span class="tag"><i class="fas fa-paw"></i> Pet Friendly</span>
+
+                <span class="tag"><i class="fas fa-clock"></i> 24/7</span>
+                <span class="tag"><i class="fas fa-wheelchair"></i> Accesible</span>
             </div>
         </div>
     </section>
 
-    <!-- Sección 4: La atmósfera -->
+    <!-- ===== LA ATMÓSFERA ===== -->
     <section class="section atmosphere" id="atmosfera">
         <div class="container">
             <div class="section-header">
@@ -223,334 +166,295 @@
             </div>
             
             <p class="atmosphere-description">
-                No importa si vienes a celebrar una victoria o simplemente a relajarte después del trabajo. En SportBar 23 y 12, encontrarás el ambiente perfecto: fans apasionados, energía contagiosa y una vibra que te hace sentir en casa.
+                No importa si vienes a celebrar o a relajarte. En SportBar 23 y 12 encontrarás el ambiente perfecto: fans apasionados, energía contagiosa y una vibra que te hace sentir en casa.
             </p>
             
             <div class="atmosphere-features">
                 <div class="atmosphere-feature">
-                    <div class="atmosphere-icon" aria-hidden="true">
-                        <i class="fas fa-bolt"></i>
-                    </div>
+                    <div class="atmosphere-icon"><i class="fas fa-bolt"></i></div>
                     <h3 class="feature-subtitle">Energía Contagiosa</h3>
-                    <p>Vive cada gol como si estuvieras en el estadio. La pasión de los fans es real.</p>
+                    <p>Vive cada gol como si estuvieras en el estadio.</p>
                 </div>
-                
                 <div class="atmosphere-feature">
-                    <div class="atmosphere-icon" aria-hidden="true">
-                        <i class="fas fa-home"></i>
-                    </div>
+                    <div class="atmosphere-icon"><i class="fas fa-home"></i></div>
                     <h3 class="feature-subtitle">Ambiente Familiar</h3>
-                    <p>Perfecto para grupos, familias y amigos. Todos son bienvenidos aquí.</p>
+                    <p>Perfecto para grupos, familias y amigos.</p>
                 </div>
-                
                 <div class="atmosphere-feature">
-                    <div class="atmosphere-icon" aria-hidden="true">
-                        <i class="fas fa-sun"></i>
-                    </div>
+                    <div class="atmosphere-icon"><i class="fas fa-sun"></i></div>
                     <h3 class="feature-subtitle">Día y Noche</h3>
-                    <p>Desde el café de la mañana hasta los partidos nocturnos. Siempre hay acción.</p>
-                </div>
-            </div>
-            
-            <div class="divider"></div>
-            
-            <div class="testimonials">
-                <div class="testimonial">
-                    <p>"El mejor ambiente para ver deportes en La Habana. ¡Siempre regreso!"</p>
-                    <span class="testimonial-author">- Carlos, Fan del Real Madrid</span>
+                    <p>Siempre hay acción. Siempre hay buena vibra.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Sección 5: Comida y Menú -->
+    <!-- ===== MENÚ / COMIDA ===== -->
     <section class="section food" id="menu">
         <div class="container">
             <div class="section-header">
                 <h2 class="section-title">
-                    <i class="fas fa-utensils" aria-hidden="true"></i> NUESTRO MENÚ
+                    <i class="fas fa-utensils"></i> NUESTRO MENÚ
                 </h2>
-                <p class="section-subtitle">
-                    Explora nuestras deliciosas opciones de comida y bebida
-                </p>
+                <p class="section-subtitle">Explorá nuestras deliciosas opciones de comida y bebida</p>
             </div>
             
-            <!-- Galería de Menú -->
             <div class="menu-gallery">
                 <div class="gallery-grid">
-                    <!-- Menú de Bebidas -->
                     <div class="gallery-item">
                         <div class="menu-bebidas">
-                            <img src="imagenes/menu-bebidas.jpg" alt="Menú de bebidas y cervezas" loading="lazy" class="menu-image">
+                            <img src="imagenes/menu-bebidas.jpg" alt="Menú de bebidas" loading="lazy">
                             <div class="image-overlay">
-                                <button class="view-image-btn" data-image="imagenes/menu-bebidas.jpg" data-title="Menú de Bebidas">
-                                    <i class="fas fa-expand"></i> Ver Completo
-                                </button>
+                                <a href="imagenes/menu-bebidas.jpg" class="view-image-btn" target="_blank">
+                                    <i class="fas fa-expand"></i> Ver completo
+                                </a>
                             </div>
                         </div>
                         <div class="img-caption">
-                            <h4><i class="fas fa-glass-cheers"></i> Bebidas & Cervezas</h4>
-                            <p>Cervezas heladas, cócteles, vinos y más</p>
+                            <h4><i class="fas fa-glass-cheers"></i> Bebidas</h4>
+                            <p>Cervezas, cócteles, vinos y más</p>
                         </div>
                     </div>
                     
-                    <!-- Menú de Comida -->
                     <div class="gallery-item">
                         <div class="menu-comida">
-                            <img src="imagenes/menu-comida.jpg" alt="Menú de comida y platos principales" loading="lazy" class="menu-image">
+                            <img src="imagenes/menu-comida.jpg" alt="Menú de comida" loading="lazy">
                             <div class="image-overlay">
-                                <button class="view-image-btn" data-image="imagenes/menu-comida.jpg" data-title="Menú de Comida">
-                                    <i class="fas fa-expand"></i> Ver Completo
-                                </button>
+                                <a href="imagenes/menu-comida.jpg" class="view-image-btn" target="_blank">
+                                    <i class="fas fa-expand"></i> Ver completo
+                                </a>
                             </div>
                         </div>
                         <div class="img-caption">
-                            <h4><i class="fas fa-hamburger"></i> Comida & Platos</h4>
-                            <p>Pizzas, tacos, hamburguesas y especialidades</p>
+                            <h4><i class="fas fa-hamburger"></i> Comida</h4>
+                            <p>Pizzas, tacos, hamburguesas</p>
                         </div>
-                    </div>
-                </div>
-                
-                <p class="gallery-note">Haz clic en "Ver Completo" para ampliar el menú</p>
-            </div>
-            
-            <!-- Modal para ver imágenes completas -->
-            <div class="image-modal" id="imageModal">
-                <div class="modal-content">
-                    <button class="close-modal" id="closeModal">
-                        <i class="fas fa-times"></i>
-                    </button>
-                    <div class="modal-header">
-                        <h3 id="modalTitle">Menú</h3>
-                    </div>
-                    <div class="modal-body">
-                        <img src="" alt="" id="modalImage">
-                    </div>
-                    <div class="modal-footer">
-                        <p>Desplázate para ver todo el menú</p>
                     </div>
                 </div>
             </div>
             
-            <div class="divider"></div>
-            
-            <div class="menu-highlights">
-                <h3 class="highlights-title">Lo Más Pedido</h3>
-                <div class="food-highlights">
-                    <div class="highlight-item">
-                        <div class="food-icon">
-                            <i class="fas fa-taco"></i>
-                        </div>
-                        <h3>Tacos de Cerdo</h3>
-                        <p>Nuestra especialidad</p>
-                    </div>
-                    
-                    <div class="highlight-item">
-                        <div class="food-icon">
-                            <i class="fas fa-pizza-slice"></i>
-                        </div>
-                        <h3>Pizza Especial</h3>
-                        <p>La favorita de los fans</p>
-                    </div>
-                    
-                    <div class="highlight-item">
-                        <div class="food-icon">
-                            <i class="fas fa-beer"></i>
-                        </div>
-                        <h3>Cerveza Helada</h3>
-                        <p>Siempre al punto perfecto</p>
-                    </div>
+            <div class="food-highlights">
+                <div class="highlight-item">
+                    <div class="food-icon"><i class="fas fa-taco"></i></div>
+                    <h3>Tacos de Cerdo</h3>
+                    <p>Nuestra especialidad</p>
+                </div>
+                <div class="highlight-item">
+                    <div class="food-icon"><i class="fas fa-pizza-slice"></i></div>
+                    <h3>Pizza Especial</h3>
+                    <p>La favorita</p>
+                </div>
+                <div class="highlight-item">
+                    <div class="food-icon"><i class="fas fa-beer"></i></div>
+                    <h3>Cerveza Helada</h3>
+                    <p>Siempre fría</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Sección 6: Ubicación y Contacto -->
+    <!-- ===== RESERVAS EXPRESS - QR + WHATSAPP ===== -->
+    <section class="section booking-express" id="reservas">
+        <div class="container">
+            <div class="booking-express-box">
+                <div class="booking-header">
+                    <i class="fas fa-bolt"></i>
+                    <h2>RESERVÁ EN 5 SEGUNDOS</h2>
+                    <p>Escaneá el código o hacé clic en el botón</p>
+                </div>
+                
+                <div class="booking-options">
+                    <!-- Opción QR -->
+                    <div class="booking-card qr-card">
+                        <div class="card-icon">
+                            <i class="fas fa-qrcode"></i>
+                        </div>
+                        <h3>ESCANEÁ EL QR</h3>
+                        <div class="qr-container">
+                            <img src="imagenes/qr-whatsapp.png" alt="Código QR para reservar por WhatsApp" class="booking-qr">
+                        </div>
+                        <p class="qr-instruction">
+                            <i class="fas fa-camera"></i> Abrí tu cámara y escaneá
+                        </p>
+                    </div>
+                    
+                    <!-- Opción Botón WhatsApp -->
+                    <div class="booking-card whatsapp-card">
+                        <div class="card-icon">
+                            <i class="fab fa-whatsapp"></i>
+                        </div>
+                        <h3>CLIC Y RESERVA</h3>
+                        <div class="whatsapp-button-container">
+                            <a href="https://wa.me/5358873126?text=Hola%20quiero%20reservar%20una%20mesa%20en%20SportBar%2023%20y%2012" 
+                               class="btn-whatsapp-large" 
+                               target="_blank">
+                                <i class="fab fa-whatsapp"></i>
+                                Abrir WhatsApp
+                            </a>
+                        </div>
+                        <p class="whatsapp-instruction">
+                            <i class="fas fa-check-circle"></i> Mensaje listo para enviar
+                        </p>
+                        <div class="message-preview">
+                            <span class="preview-label">Mensaje:</span>
+                            <span class="preview-text">"Hola quiero reservar una mesa..."</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Opción Bot Conversacional -->
+                    <div class="booking-card bot-card">
+                        <div class="card-icon">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <h3>BOT INTELIGENTE</h3>
+                        <div class="bot-button-container">
+                            <a href="bot/bot.html" class="btn-bot-large">
+                                <i class="fas fa-robot"></i>
+                                Hablar con Bot
+                            </a>
+                        </div>
+                        <p class="bot-instruction">
+                            <i class="fas fa-comments"></i> Te guía paso a paso
+                        </p>
+                        <ul class="bot-features">
+                            <li><i class="fas fa-check-circle"></i> Te pregunta fecha, hora, personas</li>
+                            <li><i class="fas fa-check-circle"></i> Guarda tus datos</li>
+                            <li><i class="fas fa-check-circle"></i> Envía la reserva ordenada</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="booking-footer">
+                    <p>
+                        <i class="fas fa-clock"></i> Respondemos en menos de 5 minutos · 
+                        <i class="fas fa-calendar"></i> Reservá con hasta 30 días de anticipación
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== UBICACIÓN Y CONTACTO ===== -->
     <section class="section location" id="ubicacion">
         <div class="container">
             <div class="section-header">
                 <h2 class="section-title">
-                    <i class="fas fa-map-marker-alt" aria-hidden="true"></i> VISÍTANOS
+                    <i class="fas fa-map-marker-alt"></i> VISÍTANOS
                 </h2>
-                <p class="section-subtitle">
-                    Estamos en el corazón de La Habana para recibirte
-                </p>
+                <p class="section-subtitle">Estamos en el corazón de La Habana</p>
             </div>
             
-            <div class="location-info">
-                <div class="info-item">
-                    <div class="info-icon" aria-hidden="true">
-                        <i class="fas fa-map-pin"></i>
-                    </div>
-                    <h3 class="info-title">Dirección</h3>
-                    <p class="info-text">23 y 12, Vedado<br>La Habana, Cuba</p>
+            <div class="location-grid">
+                <div class="location-card">
+                    <div class="location-icon"><i class="fas fa-map-pin"></i></div>
+                    <h3>Dirección</h3>
+                    <p>23 y 12, Vedado<br>La Habana, Cuba</p>
                     <button class="btn outline" id="btnMapa">
-                        <i class="fas fa-map-marked-alt"></i> Ver Mapa
+                        <i class="fas fa-map-marked-alt"></i> Ver mapa
                     </button>
                 </div>
                 
-                <div class="info-item">
-                    <div class="info-icon" aria-hidden="true">
-                        <i class="fas fa-clock"></i>
-                    </div>
-                    <h3 class="info-title">Horario</h3>
-                    <p class="info-text">Abierto 24 horas<br>7 días a la semana</p>
+                <div class="location-card">
+                    <div class="location-icon"><i class="fas fa-clock"></i></div>
+                    <h3>Horario</h3>
+                    <p>Abierto 24 horas<br>7 días a la semana</p>
                 </div>
                 
-                <div class="info-item">
-                    <div class="info-icon" aria-hidden="true">
-                        <i class="fas fa-phone"></i>
-                    </div>
-                    <h3 class="info-title">Contacto</h3>
-                    <p class="info-text">Reservas e Información</p>
-                    <a href="tel:+5358873126" class="btn outline phone-btn">
-                        <i class="fas fa-phone"></i> +53 5887 3126
+                <div class="location-card">
+                    <div class="location-icon"><i class="fas fa-phone"></i></div>
+                    <h3>Contacto</h3>
+                    <p><strong>+53 58873126</strong></p>
+                    <a href="tel:+5358873126" class="btn outline">
+                        <i class="fas fa-phone"></i> Llamar
                     </a>
-                    <a href="https://wa.me/5358873126" 
-                       class="btn whatsapp-btn"
-                       target="_blank"
-                       rel="noopener noreferrer"
-                       aria-label="Contactar por WhatsApp">
+                    <a href="https://wa.me/5358873126?text=Hola%20quiero%20reservar%20una%20mesa%20en%20SportBar%2023%20y%2012" class="btn whatsapp-btn" target="_blank">
                         <i class="fab fa-whatsapp"></i> WhatsApp
                     </a>
                 </div>
             </div>
             
             <div class="location-features">
-                <div class="location-feature">
-                    <i class="fas fa-utensils" aria-hidden="true"></i> Dine-In
-                </div>
-                <div class="location-feature">
-                    <i class="fas fa-paw" aria-hidden="true"></i> Pet Friendly
-                </div>
-                <div class="location-feature">
-                    <i class="fas fa-wifi" aria-hidden="true"></i> WiFi Gratis
-                </div>
-                <div class="location-feature">
-                    <i class="fas fa-users" aria-hidden="true"></i> Grupos
-                </div>
-                <div class="location-feature">
-                    <i class="fas fa-wheelchair" aria-hidden="true"></i> Accesible
-                </div>
-            </div>
-            
-            <div class="divider"></div>
-            
-            <div class="location-message">
-                <div class="message-icon">
-                    <i class="fas fa-beer"></i>
-                </div>
-                <h3>Te Esperamos</h3>
-                <p>Ven a disfrutar del mejor ambiente deportivo con comida increíble y cerveza helada</p>
-                <div class="action-buttons">
-                    <a href="tel:+5358873126" class="btn primary">
-                        <i class="fas fa-phone"></i> Llámanos Ahora
-                    </a>
-                </div>
+                <span class="feature-badge"><i class="fas fa-utensils"></i> Dine-In</span>
+                <span class="feature-badge"><i class="fas fa-paw"></i> Pet Friendly</span>
+                <span class="feature-badge"><i class="fas fa-users"></i> Grupos</span>
+                <span class="feature-badge"><i class="fas fa-wheelchair"></i> Accesible</span>
             </div>
         </div>
     </section>
 
-    <!-- Footer -->
-    <footer class="footer" id="contacto">
+    <!-- ===== FOOTER ===== -->
+    <footer class="footer">
         <div class="container">
             <div class="footer-content">
-                <!-- Pelota de fútbol en footer -->
-                <div class="footer-ball" aria-hidden="true">
-                    <div class="ball small">
-                        <div class="pentagon"></div>
-                        <div class="pentagon"></div>
-                        <div class="pentagon"></div>
-                        <div class="pentagon"></div>
-                        <div class="pentagon"></div>
-                    </div>
-                </div>
-                
-                <div class="footer-title">
+                <div class="footer-logo">
                     <h2>SPORTBAR</h2>
-                    <p>23 y 12 - El Lugar de los Fans del Deporte</p>
+                    <p>23 y 12 · El lugar de los fans del deporte</p>
                 </div>
                 
                 <div class="footer-info">
-                    <p>
-                        <i class="fas fa-beer" aria-hidden="true"></i> Cerveza fría, 
-                        <i class="fas fa-utensils" aria-hidden="true"></i> comida deliciosa, 
-                        <i class="fas fa-tv" aria-hidden="true"></i> partidos en vivo y 
-                        <i class="fas fa-heart" aria-hidden="true"></i> una atmósfera inolvidable
-                    </p>
-                </div>
-                
-                <div class="contact-info">
-                    <h3>Información de Contacto</h3>
                     <p><i class="fas fa-map-marker-alt"></i> 23 y 12, Vedado, La Habana</p>
-                    <p><i class="fas fa-phone"></i> +53 5887 3126</p>
-                    <p><i class="fas fa-clock"></i> Abierto 24/7</p>
+                    <p><i class="fas fa-phone"></i> +53 58873126</p>
+                    <p><i class="fas fa-clock"></i> 24/7 · Siempre abiertos</p>
                 </div>
                 
                 <div class="social-links">
-                    <a href="https://facebook.com" 
-                       class="social-link" 
-                       target="_blank"
-                       rel="noopener noreferrer"
-                       aria-label="Síguenos en Facebook">
-                        <i class="fab fa-facebook-f"></i>
-                    </a>
-                    <a href="https://instagram.com" 
-                       class="social-link" 
-                       target="_blank"
-                       rel="noopener noreferrer"
-                       aria-label="Síguenos en Instagram">
-                        <i class="fab fa-instagram"></i>
-                    </a>
-                    <a href="https://wa.me/5358873126" 
-                       class="social-link" 
-                       target="_blank"
-                       rel="noopener noreferrer"
-                       aria-label="Contáctanos por WhatsApp">
-                        <i class="fab fa-whatsapp"></i>
-                    </a>
-                </div>
-                
-                <div class="footer-tags">
-                    <span class="footer-tag">
-                        <i class="fas fa-futbol" aria-hidden="true"></i> Deporte
-                    </span>
-                    <span class="footer-tag">
-                        <i class="fas fa-beer" aria-hidden="true"></i> Cerveza
-                    </span>
-                    <span class="footer-tag">
-                        <i class="fas fa-pizza-slice" aria-hidden="true"></i> Comida
-                    </span>
-                    <span class="footer-tag">
-                        <i class="fas fa-users" aria-hidden="true"></i> Comunidad
-                    </span>
-                    <span class="footer-tag">
-                        <i class="fas fa-clock" aria-hidden="true"></i> 24/7
-                    </span>
+                    <a href="#" class="https://www.facebook.com/share/188wXNnLxJ/?mibextid=wwXIfr"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="https://www.instagram.com/sportbar_23y12?igsh=NzN6NHY1dHR3ejRq"><i class="fab fa-instagram"></i></a>
+                    <a href="https://wa.me/5358873126" class="social-link" target="_blank"><i class="fab fa-whatsapp"></i></a>
                 </div>
                 
                 <div class="footer-bottom">
-                    <p>&copy; 2024 SPORTBAR 23 y 12. Todos los derechos reservados.</p>
-                    <p class="footer-links">
-                        <a href="#inicio">Inicio</a> • 
-                        <a href="#menu">Menú</a> • 
-                        <a href="#ubicacion">Ubicación</a> • 
-                        <a href="#contacto">Contacto</a>
-                    </p>
+                    <p>&copy; 2026 SPORTBAR 23 y 12. Todos los derechos reservados.</p>
                 </div>
             </div>
         </div>
     </footer>
 
-    <!-- Botón flotante para WhatsApp -->
-    <a href="https://wa.me/5358873126" 
-       class="whatsapp-float" 
-       target="_blank"
-       rel="noopener noreferrer"
-       aria-label="Chatea con nosotros por WhatsApp">
-        <i class="fab fa-whatsapp"></i>
-    </a>
+    <!-- ===== BOTÓN FLOTANTE WHATSAPP + QR ===== -->
+    <div class="float-buttons">
+        <a href="bot/bot.html" class="float-button float-bot" aria-label="Bot de reservas">
+            <i class="fas fa-robot"></i>
+            <span>Bot</span>
+        </a>
+        
+        <a href="https://wa.me/5358873126?text=Hola%20quiero%20reservar%20una%20mesa%20en%20SportBar%2023%20y%2012" 
+           class="float-button float-whatsapp" 
+           target="_blank"
+           aria-label="Reservar por WhatsApp">
+            <i class="fab fa-whatsapp"></i>
+            <span>WhatsApp</span>
+        </a>
+        
+        <button class="float-button float-qr" id="showQrModal" aria-label="Mostrar código QR">
+            <i class="fas fa-qrcode"></i>
+            <span>QR</span>
+        </button>
+    </div>
 
+    <!-- ===== MODAL PARA QR (VERSIÓN GRANDE) ===== -->
+    <div id="qrModal" class="modal">
+        <div class="modal-content modal-qr">
+            <div class="modal-header">
+                <h3><i class="fas fa-qrcode"></i> RESERVÁ CON UN ESCANEO</h3>
+                <button class="close-modal" id="closeQrModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <img src="imagenes/qr-whatsapp.png" alt="Código QR de WhatsApp" class="modal-qr-image">
+                <p class="modal-qr-text">
+                    1. Abrí la cámara de tu celular<br>
+                    2. Escaneá este código<br>
+                    3. Enviá el mensaje listo
+                </p>
+                <a href="https://wa.me/5358873126?text=Hola%20quiero%20reservar%20una%20mesa%20en%20SportBar%2023%20y%2012" 
+                   class="btn primary" 
+                   target="_blank">
+                    <i class="fab fa-whatsapp"></i> Abrir WhatsApp directamente
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
     <script src="script.js" defer></script>
 </body>
 </html>
