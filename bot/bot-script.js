@@ -274,14 +274,16 @@
     }
 
     function showZoneSelection() {
-        let html = '<p>📍 Zona:</p><div class="options-container">';
-        CONFIG.zones.forEach(z => {
-            html += `<button class="option-btn" onclick="window.selectZone('${z.id}')">${z.name}</button>`;
-        });
-        html += '</div>';
-        DOM.messagesArea.appendChild(createBotMessage(html));
-        scrollToBottom();
-    }
+    let html = '<p>📍 Elegí una zona:</p><div class="options-container">';
+    
+    CONFIG.zones.forEach(z => {
+        html += `<button class="option-btn" onclick="window.selectZone('${z.id}')">${z.name}</button>`;
+    });
+    
+    html += '</div>';
+    DOM.messagesArea.appendChild(createBotMessage(html));
+    scrollToBottom();
+}
 
     window.selectZone = function(id) {
         BotState.bookingData.zone = CONFIG.zones.find(z => z.id === id);
@@ -341,17 +343,28 @@
     };
 
     function showTableOptions() {
-        const html = `
-            <p>🪑 Mesa preferida:</p>
-            <div class="options-container">
-                <button class="option-btn" onclick="window.selectTable('31')">Mesa 31</button>
-                <button class="option-btn" onclick="window.selectTable('33')">Mesa 33</button>
-                <button class="option-btn" onclick="window.selectTable('cualquiera')">Cualquiera</button>
-            </div>
+    const zone = BotState.bookingData.zone;
+    let html = '<p>🪑 Elegí una opción:</p><div class="options-container">';
+    
+    if (zone && zone.id === 'billar') {
+        html += `
+            <button class="option-btn" onclick="window.selectTable('Billar 1')">🎱 Mesa Billar 1</button>
+            <button class="option-btn" onclick="window.selectTable('Billar 2')">🎱 Mesa Billar 2</button>
+            <button class="option-btn" onclick="window.selectTable('Cualquiera con disponibilidad')">Cualquiera</button>
         `;
-        DOM.messagesArea.appendChild(createBotMessage(html));
-        scrollToBottom();
+    } else {
+        // Para otras zonas, mostrar opciones generales
+        html += `
+            <button class="option-btn" onclick="window.selectTable('31')">Mesa 31</button>
+            <button class="option-btn" onclick="window.selectTable('33')">Mesa 33</button>
+            <button class="option-btn" onclick="window.selectTable('Cualquiera')">Cualquiera</button>
+        `;
     }
+    
+    html += '</div>';
+    DOM.messagesArea.appendChild(createBotMessage(html));
+    scrollToBottom();
+}
 
     window.selectTable = function(table) {
         BotState.bookingData.table = table;
@@ -421,19 +434,34 @@
         scrollToBottom();
     }
 
-    function generateMessage() {
-        const d = BotState.bookingData;
-        const z = d.zone;
-        return `🍻 NUEVA RESERVA
-👤 ${d.name}
-📍 ${z.name} ${z.minConsumption > 0 ? '($'+z.minConsumption+')' : ''}
-👥 ${d.people} pers
-📅 ${d.date} ${d.time}
-🪑 Mesa ${d.table}
-📢 ${d.offers ? 'Acepta ofertas' : 'No ofertas'}
-
-✅ Pendiente confirmación`;
+function generateMessage() {
+    const d = BotState.bookingData;
+    const z = d.zone;
+    
+    let consumoTexto = '';
+    if (z.minConsumption > 0) {
+        consumoTexto = `💰 Consumo mínimo: $${z.minConsumption}`;
     }
+    
+    let zonaTexto = z.name;
+    if (z.id === 'billar') {
+        zonaTexto = '🎱 Billar';
+    }
+    
+    return `🍻 *NUEVA RESERVA - SPORTBAR 23 Y 12*
+    
+👤 *Cliente:* ${d.name}
+📍 *Zona:* ${zonaTexto}
+${consumoTexto}
+👥 *Personas:* ${d.people}
+📅 *Fecha:* ${d.date}
+⏰ *Hora:* ${d.time}
+🪑 *Mesa:* ${d.table}
+
+📢 *Ofertas:* ${d.offers ? '✅ Sí' : '❌ No'}
+
+✅ *Estado:* Pendiente de confirmación`;
+}
 
     function formatDate(date) {
         return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
