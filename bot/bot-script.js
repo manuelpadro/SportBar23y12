@@ -1,59 +1,28 @@
 /**
- * SPORTBAR 23 Y 12 - BOT DE RESERVAS
- * Versión 3.0 - CORREGIDA - Sin mensaje duplicado
+ * SPORTBAR 23 Y 12 - BOT INTELIGENTE
+ * Versión 4.0 - Con procesamiento de lenguaje natural
+ * Reconoce lo que escribe el usuario y extrae la información
  */
 
 (function() {
     'use strict';
 
     // ============================================
-    // CONFIGURACIÓN - EDITÁ SOLO ESTA PARTE
+    // CONFIGURACIÓN
     // ============================================
     const CONFIG = {
-        // 📱 TU NÚMERO DE WHATSAPP - CAMBIALO ACÁ
         whatsappNumber: '5358873126',
         
-        // 🏆 ZONAS DEL BAR
         zones: [
-            { 
-                id: 'vip', 
-                name: '🥇 VIP', 
-                minConsumption: 3000,  // Consumo mínimo en pesos
-                minPeople: 4, 
-                maxPeople: 8,
-                description: 'Consumo mínimo $3000'
-            },
-            { 
-                id: 'interior', 
-                name: '🪑 Estándar Interior', 
-                minConsumption: 0, 
-                minPeople: 2, 
-                maxPeople: 6,
-                description: 'Sin consumo mínimo'// agregarle un consnum
-            },
-            { 
-                id: 'exterior', 
-                name: '🌳 Estándar Exterior', 
-                minConsumption: 0, 
-                minPeople: 2, 
-                maxPeople: 8,
-                description: 'Sin consumo mínimo'
-            },
-            { 
-                id: 'barra', 
-                name: '🍻 Barra', 
-                minConsumption: 0, 
-                minPeople: 1, 
-                maxPeople: 2,
-                description: 'Sin consumo mínimo'//agregarle consumo minimo 
-            }
+            { id: 'vip', name: '🥇 VIP', minConsumption: 3000, minPeople: 4, maxPeople: 8, keywords: ['vip', 'exclusivo', 'privado'] },
+            { id: 'interior', name: '🪑 Estándar Interior', minConsumption: 0, minPeople: 2, maxPeople: 6, keywords: ['interior', 'adentro', 'dentro'] },
+            { id: 'exterior', name: '🌳 Estándar Exterior', minConsumption: 0, minPeople: 2, maxPeople: 8, keywords: ['exterior', 'afuera', 'terraza', 'jardín'] },
+            { id: 'barra', name: '🍻 Barra', minConsumption: 0, minPeople: 1, maxPeople: 2, keywords: ['barra', 'bar'] }
         ],
         
-        // ⏰ Horarios disponibles
         availableTimes: ['07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'],
         
-        // 👋 Mensaje de bienvenida (SOLO UNO)
-        welcomeMessage: '🏈 ¡Hola! Soy SportBot, tu asistente virtual de SPORTBAR 23 y 12.\n\nTe voy a ayudar a reservar tu mesa. ¿Cómo te llamás?'
+        welcomeMessage: '🏈 ¡Hola! Soy SportBot, tu asistente virtual de SPORTBAR 23 y 12.\n\nPodés escribirme de forma natural, por ejemplo:\n"Quiero reservar para 4 personas en VIP hoy a las 20:00"\n\n¿Cómo te llamás?'
     };
 
     // ============================================
@@ -71,7 +40,8 @@
             offers: null
         },
         isWaitingResponse: false,
-        initialized: false
+        initialized: false,
+        extractedInfo: {}
     };
 
     // ============================================
@@ -87,20 +57,149 @@
     };
 
     // ============================================
-    // INICIALIZACIÓN - SOLO UNA VEZ
+    // PROCESADOR DE LENGUAJE NATURAL
+    // ============================================
+    const LanguageProcessor = {
+        // Extraer número de personas del texto
+        extractPeople: function(text) {
+            const patterns = [
+                /(\d+)\s*(personas?|gente|comensales?|pax)/i,
+                /(para|somos?|vamos)\s*(\d+)/i,
+                /(\d+)\s*(pax?)/i
+            ];
+            
+            for (let pattern of patterns) {
+                const match = text.match(pattern);
+                if (match) {
+                    const num = parseInt(match[1] || match[2]);
+                    if (!isNaN(num) && num > 0 && num <= 12) return num;
+                }
+            }
+            return null;
+        },
+        
+        // Extraer zona del texto
+        extractZone: function(text) {
+            text = text.toLowerCase();
+            
+            for (let zone of CONFIG.zones) {
+                for (let keyword of zone.keywords) {
+                    if (text.includes(keyword)) {
+                        return zone;
+                    }
+                }
+            }
+            
+            // Si menciona algún número de mesa conocido
+            const mesaMatch = text.match(/mesa\s*(\d+)/i);
+            if (mesaMatch) {
+                const mesaNum = parseInt(mesaMatch[1]);
+                // Asignar zona por número de mesa (personalizable)
+                if (mesaNum >= 1 && mesaNum <= 10) return CONFIG.zones.find(z => z.id === 'vip');
+                if (mesaNum >= 11 && mesaNum <= 30) return CONFIG.zones.find(z => z.id === 'interior');
+                if (mesaNum >= 31 && mesaNum <= 50) return CONFIG.zones.find(z => z.id === 'exterior');
+            }
+            
+            return null;
+        },
+        
+        // Extraer fecha del texto
+        extractDate: function(text) {
+            text = text.toLowerCase();
+            const today = new Date();
+            
+            // Palabras clave
+            if (text.includes('hoy')) return new Date(today);
+            if (text.includes('mañana')) {
+                const tomorrow = new Date(today);
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                return tomorrow;
+            }
+            if (text.includes('pasado')) {
+                const afterTomorrow = new Date(today);
+                afterTomorrow.setDate(afterTomorrow.getDate() + 2);
+                return afterTomorrow;
+            }
+            
+            // Formato DD/MM o DD/MM/YYYY
+            const datePattern = /(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?/;
+            const match = text.match(datePattern);
+            if (match) {
+                let day = parseInt(match[1]);
+                let month = parseInt(match[2]) - 1;
+                let year = match[3] ? parseInt(match[3]) : today.getFullYear();
+                if (year < 100) year += 2000;
+                
+                return new Date(year, month, day);
+            }
+            
+            return null;
+        },
+        
+        // Extraer hora del texto
+        extractTime: function(text) {
+            // Formato HH:MM
+            const timePattern = /(\d{1,2})[:.](\d{2})\s*(?:hs?)?/i;
+            const match = text.match(timePattern);
+            if (match) {
+                let hour = parseInt(match[1]);
+                let minute = parseInt(match[2]);
+                if (hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59) {
+                    return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+                }
+            }
+            
+            // Formato HH (solo hora)
+            const hourPattern = /(?:a\s*las|)\s*(\d{1,2})\s*(?:hs?|horas?)?\b(?![:.]\d)/i;
+            const hourMatch = text.match(hourPattern);
+            if (hourMatch) {
+                let hour = parseInt(hourMatch[1]);
+                if (hour >= 0 && hour <= 23) {
+                    return `${hour.toString().padStart(2, '0')}:00`;
+                }
+            }
+            
+            return null;
+        },
+        
+        // Extraer preferencia de mesa
+        extractTable: function(text) {
+            const match = text.match(/mesa\s*(\d+)/i);
+            return match ? match[1] : 'cualquiera';
+        },
+        
+        // Extraer nombre (si no lo tenemos)
+        extractName: function(text) {
+            // Si el texto es muy corto, probablemente es el nombre
+            if (text.length < 20 && !text.includes(' ') && isNaN(text)) {
+                return text;
+            }
+            return null;
+        },
+        
+        // Procesar todo el texto y extraer información
+        processText: function(text) {
+            return {
+                people: this.extractPeople(text),
+                zone: this.extractZone(text),
+                date: this.extractDate(text),
+                time: this.extractTime(text),
+                table: this.extractTable(text),
+                name: this.extractName(text)
+            };
+        }
+    };
+
+    // ============================================
+    // INICIALIZACIÓN
     // ============================================
     function init() {
-        // ✅ EVITAR DOBLE INICIALIZACIÓN
         if (BotState.initialized) return;
         BotState.initialized = true;
-        
-        console.log('🤖 SportBot iniciado correctamente');
         
         loadSavedData();
         setupEventListeners();
         focusInput();
-        
-        // ✅ SOLO UN MENSAJE DE BIENVENIDA
         addBotMessage(CONFIG.welcomeMessage);
     }
 
@@ -137,98 +236,176 @@
     }
 
     // ============================================
-    // PROCESAR RESPUESTAS
+    // PROCESAR RESPUESTA CON NLP
     // ============================================
     function processResponse(input) {
+        // Extraer información del texto
+        const extracted = LanguageProcessor.processText(input);
+        
         switch (BotState.currentStep) {
             case 0: // NOMBRE
-                if (input.length < 2) {
-                    addBotMessage('Por favor, ingresá tu nombre completo.');
+                if (extracted.name) {
+                    BotState.bookingData.name = extracted.name;
+                } else if (input.length >= 2) {
+                    BotState.bookingData.name = input;
+                } else {
+                    addBotMessage('Por favor, decime tu nombre para continuar.');
                     return;
                 }
-                BotState.bookingData.name = input;
-                saveToLocalStorage('sportbar_user_name', input);
-                addBotMessage(`Mucho gusto, ${input} 👋`);
+                
+                saveToLocalStorage('sportbar_user_name', BotState.bookingData.name);
+                addBotMessage(`Mucho gusto, ${BotState.bookingData.name} 👋`);
                 BotState.currentStep++;
+                
+                // Si ya extrajo zona, avanzar
+                if (extracted.zone) {
+                    BotState.bookingData.zone = extracted.zone;
+                    addBotMessage(`Veo que querés zona ${extracted.zone.name}.`);
+                    if (extracted.people) {
+                        BotState.bookingData.people = extracted.people;
+                        BotState.currentStep = 2;
+                        if (extracted.date) {
+                            BotState.bookingData.date = formatDate(extracted.date);
+                            BotState.currentStep = 3;
+                            if (extracted.time) {
+                                BotState.bookingData.time = extracted.time;
+                                BotState.currentStep = 4;
+                                showTableOptions();
+                                return;
+                            }
+                        }
+                    }
+                }
+                
+                // Si no, preguntar lo que falta
                 showZoneSelection();
                 break;
                 
-            case 2: // CANTIDAD DE PERSONAS
-                const people = parseInt(input);
-                const zone = BotState.bookingData.zone;
+            case 1: // ZONA
+                let zone = extracted.zone;
+                if (!zone) {
+                    // Intentar match con el texto
+                    const text = input.toLowerCase();
+                    for (let z of CONFIG.zones) {
+                        if (text.includes(z.id) || text.includes(z.name.toLowerCase())) {
+                            zone = z;
+                            break;
+                        }
+                    }
+                }
                 
-                if (isNaN(people) || people < zone.minPeople || people > zone.maxPeople) {
-                    addBotMessage(`Para zona ${zone.name} la capacidad es de ${zone.minPeople} a ${zone.maxPeople} personas. ¿Cuántas van a ser?`);
+                if (!zone) {
+                    addBotMessage('Por favor, elegí una zona de las opciones disponibles.');
+                    showZoneSelection();
+                    return;
+                }
+                
+                BotState.bookingData.zone = zone;
+                addBotMessage(`Elegiste ${zone.name}. ${zone.minConsumption > 0 ? '💰 Consumo mínimo $' + zone.minConsumption : '✅ Sin consumo mínimo'}`);
+                
+                // Si ya tenemos personas, avanzar
+                if (extracted.people) {
+                    if (extracted.people >= zone.minPeople && extracted.people <= zone.maxPeople) {
+                        BotState.bookingData.people = extracted.people;
+                        BotState.currentStep = 2;
+                        if (extracted.date) {
+                            BotState.bookingData.date = formatDate(extracted.date);
+                            BotState.currentStep = 3;
+                            if (extracted.time) {
+                                BotState.bookingData.time = extracted.time;
+                                BotState.currentStep = 4;
+                                showTableOptions();
+                                return;
+                            }
+                        }
+                    } else {
+                        addBotMessage(`Para zona ${zone.name} la capacidad es de ${zone.minPeople} a ${zone.maxPeople} personas.`);
+                    }
+                }
+                
+                BotState.currentStep = 2;
+                addBotMessage(`¿Para cuántas personas? (mínimo ${zone.minPeople}, máximo ${zone.maxPeople})`);
+                break;
+                
+            case 2: // PERSONAS
+                let people = extracted.people || parseInt(input);
+                
+                if (isNaN(people) || people < BotState.bookingData.zone.minPeople || people > BotState.bookingData.zone.maxPeople) {
+                    addBotMessage(`Por favor, ingresá un número entre ${BotState.bookingData.zone.minPeople} y ${BotState.bookingData.zone.maxPeople} personas.`);
                     return;
                 }
                 
                 BotState.bookingData.people = people;
+                BotState.currentStep = 3;
                 
-                if (zone.minConsumption > 0) {
-                    addBotMessage(`✅ Perfecto. Recordá que la zona ${zone.name} tiene un consumo mínimo de $${zone.minConsumption} por mesa.`);
+                // Si ya tenemos fecha, avanzar
+                if (extracted.date) {
+                    BotState.bookingData.date = formatDate(extracted.date);
+                    BotState.currentStep = 4;
+                    if (extracted.time) {
+                        BotState.bookingData.time = extracted.time;
+                        BotState.currentStep = 5;
+                        showTableOptions();
+                        return;
+                    }
                 }
                 
-                BotState.currentStep++;
                 showDatePicker();
                 break;
                 
+            case 3: // FECHA
+                // La fecha se maneja con el date picker
+                break;
+                
             case 4: // HORA
-                if (!CONFIG.availableTimes.includes(input)) {
-                    addBotMessage(`Por favor, seleccioná un horario de la lista.`);
+                let time = extracted.time || input;
+                
+                if (!CONFIG.availableTimes.includes(time)) {
+                    addBotMessage('Por favor, seleccioná un horario de la lista.');
+                    showTimeSelection();
                     return;
                 }
-                BotState.bookingData.time = input;
-                BotState.currentStep++;
+                
+                BotState.bookingData.time = time;
+                BotState.currentStep = 5;
                 showTableOptions();
                 break;
                 
             case 5: // MESA
-                BotState.bookingData.table = input;
-                BotState.currentStep++;
+                BotState.bookingData.table = extracted.table || input || 'cualquiera';
+                BotState.currentStep = 6;
                 showOffersQuestion();
                 break;
                 
             case 6: // OFERTAS
                 const offers = input.toLowerCase();
-                if (offers.includes('sí') || offers.includes('si') || offers.includes('ok') || offers.includes('dale') || offers.includes('quiero')) {
-                    BotState.bookingData.offers = true;
-                } else {
-                    BotState.bookingData.offers = false;
-                }
-                BotState.currentStep++;
+                BotState.bookingData.offers = offers.includes('sí') || offers.includes('si') || offers.includes('ok') || offers.includes('dale') || offers.includes('quiero');
+                BotState.currentStep = 7;
                 showBookingSummary();
                 break;
         }
     }
 
     // ============================================
-    // 1. SELECCIÓN DE ZONA
+    // MOSTRAR ZONAS
     // ============================================
     function showZoneSelection() {
         let buttonsHtml = '';
         CONFIG.zones.forEach(zone => {
             buttonsHtml += `<button class="option-btn" onclick="window.selectZone('${zone.id}')">
-                ${zone.name} <br><small style="font-size: 0.8rem;">${zone.description}</small>
+                ${zone.name}
             </button>`;
         });
 
-        const messageDiv = document.createElement('div');
-        messageDiv.className = 'message bot-message';
-        messageDiv.innerHTML = `
-            <div class="message-avatar"><i class="fas fa-robot"></i></div>
-            <div class="message-content">
-                <p><strong>📍 ¿En qué zona querés reservar?</strong></p>
-                <div class="options-container">
-                    ${buttonsHtml}
-                </div>
-            </div>
-        `;
+        const messageDiv = createBotMessage(`
+            <p><strong>📍 ¿En qué zona querés reservar?</strong></p>
+            <div class="options-container">${buttonsHtml}</div>
+        `);
         
         DOM.messagesArea.appendChild(messageDiv);
         scrollToBottom();
     }
 
-    // Zona selection global
     window.selectZone = function(zoneId) {
         const zone = CONFIG.zones.find(z => z.id === zoneId);
         BotState.bookingData.zone = zone;
@@ -238,86 +415,62 @@
         showTypingIndicator();
         setTimeout(() => {
             hideTypingIndicator();
-            addBotMessage(`Elegiste ${zone.name}. ${zone.description}`);
-            addBotMessage(`👥 ¿Para cuántas personas? (mínimo ${zone.minPeople}, máximo ${zone.maxPeople})`);
+            addBotMessage(`Elegiste ${zone.name}.`);
+            addBotMessage(`¿Para cuántas personas? (mínimo ${zone.minPeople}, máximo ${zone.maxPeople})`);
             BotState.currentStep = 2;
         }, 800);
     };
 
-// ============================================
-// 2. SELECTOR DE FECHA - CORREGIDO
-// ============================================
-function showDatePicker() {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-    const todayStr = `${year}-${month}-${day}`;
-    
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'message bot-message';
-    messageDiv.innerHTML = `
-        <div class="message-avatar"><i class="fas fa-robot"></i></div>
-        <div class="message-content">
+    // ============================================
+    // SELECTOR DE FECHA
+    // ============================================
+    function showDatePicker() {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        const todayStr = `${year}-${month}-${day}`;
+        
+        const messageDiv = createBotMessage(`
             <p><strong>📅 ¿Qué día querés venir?</strong></p>
-            <p style="font-size: 0.9rem; color: #adb5bd; margin-bottom: 1rem;">
-                Seleccioná la fecha en el calendario
-            </p>
             <div class="date-picker-container">
                 <input type="date" id="datePicker" min="${todayStr}" value="${todayStr}">
             </div>
-            <div class="options-container" style="margin-top: 1rem;">
+            <div class="options-container">
                 <button class="option-btn" onclick="window.confirmDate()">
                     <i class="fas fa-check"></i> Confirmar fecha
                 </button>
             </div>
-        </div>
-    `;
-    
-    DOM.messagesArea.appendChild(messageDiv);
-    scrollToBottom();
-}
-
-// ✅ VERSIÓN CORREGIDA - SIN PROBLEMA DE ZONA HORARIA
-window.confirmDate = function() {
-    const dateInput = document.getElementById('datePicker');
-    if (!dateInput || !dateInput.value) {
-        addBotMessage('Por favor, seleccioná una fecha.');
-        return;
+        `);
+        
+        DOM.messagesArea.appendChild(messageDiv);
+        scrollToBottom();
     }
-    
-    // Extraemos año, mes, día directamente del input
-    const [year, month, day] = dateInput.value.split('-');
-    
-    // Array de meses en español
-    const meses = [
-        'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-        'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
-    ];
-    
-    // Formateamos sin usar el objeto Date para evitar problemas de zona horaria
-    const diaNumero = parseInt(day, 10);
-    const mesNombre = meses[parseInt(month, 10) - 1];
-    const anioNumero = parseInt(year, 10);
-    
-    const formattedDate = `${diaNumero} de ${mesNombre} de ${anioNumero}`;
-    
-    // Guardamos la fecha
-    BotState.bookingData.date = formattedDate;
-    
-    // Mostramos al usuario
-    addUserMessage(formattedDate);
-    
-    showTypingIndicator();
-    setTimeout(() => {
-        hideTypingIndicator();
-        addBotMessage(`✅ ${formattedDate}`);
-        showTimeSelection();
-    }, 800);
-};
+
+    window.confirmDate = function() {
+        const dateInput = document.getElementById('datePicker');
+        if (!dateInput || !dateInput.value) {
+            addBotMessage('Por favor, seleccioná una fecha.');
+            return;
+        }
+        
+        const [year, month, day] = dateInput.value.split('-');
+        const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+        const formattedDate = `${parseInt(day)} de ${meses[parseInt(month)-1]} de ${year}`;
+        
+        BotState.bookingData.date = formattedDate;
+        addUserMessage(formattedDate);
+        
+        showTypingIndicator();
+        setTimeout(() => {
+            hideTypingIndicator();
+            addBotMessage(`✅ ${formattedDate}`);
+            showTimeSelection();
+        }, 800);
+    };
 
     // ============================================
-    // 3. SELECCIÓN DE HORA
+    // SELECCIÓN DE HORA
     // ============================================
     function showTimeSelection() {
         let buttonsHtml = '';
@@ -325,23 +478,15 @@ window.confirmDate = function() {
             buttonsHtml += `<button class="option-btn" onclick="window.selectTime('${time}')">${time}</button>`;
         });
 
-        const messageDiv = document.createElement('div');
-        messageDiv.className = 'message bot-message';
-        messageDiv.innerHTML = `
-            <div class="message-avatar"><i class="fas fa-robot"></i></div>
-            <div class="message-content">
-                <p><strong>⏰ ¿A qué hora?</strong></p>
-                <div class="options-container">
-                    ${buttonsHtml}
-                </div>
-            </div>
-        `;
+        const messageDiv = createBotMessage(`
+            <p><strong>⏰ ¿A qué hora?</strong></p>
+            <div class="options-container">${buttonsHtml}</div>
+        `);
         
         DOM.messagesArea.appendChild(messageDiv);
         scrollToBottom();
     }
 
-    // Seleccionar hora global
     window.selectTime = function(time) {
         BotState.bookingData.time = time;
         addUserMessage(time);
@@ -355,7 +500,7 @@ window.confirmDate = function() {
     };
 
     // ============================================
-    // 4. SELECCIÓN DE MESA
+    // OPCIONES DE MESA
     // ============================================
     function showTableOptions() {
         const suggestions = ['31', '33', '27', '45', 'cualquiera'];
@@ -366,23 +511,15 @@ window.confirmDate = function() {
             </button>`;
         });
 
-        const messageDiv = document.createElement('div');
-        messageDiv.className = 'message bot-message';
-        messageDiv.innerHTML = `
-            <div class="message-avatar"><i class="fas fa-robot"></i></div>
-            <div class="message-content">
-                <p><strong>🪑 Mesa preferida</strong></p>
-                <div class="options-container">
-                    ${buttonsHtml}
-                </div>
-            </div>
-        `;
+        const messageDiv = createBotMessage(`
+            <p><strong>🪑 Mesa preferida</strong></p>
+            <div class="options-container">${buttonsHtml}</div>
+        `);
         
         DOM.messagesArea.appendChild(messageDiv);
         scrollToBottom();
     }
 
-    // Seleccionar mesa global
     window.selectTable = function(table) {
         BotState.bookingData.table = table;
         addUserMessage(`Mesa ${table}`);
@@ -396,37 +533,29 @@ window.confirmDate = function() {
     };
 
     // ============================================
-    // 5. PREGUNTA DE OFERTAS
+    // PREGUNTA DE OFERTAS
     // ============================================
     function showOffersQuestion() {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = 'message bot-message';
-        messageDiv.innerHTML = `
-            <div class="message-avatar"><i class="fas fa-robot"></i></div>
-            <div class="message-content">
-                <p><strong>📢 ¿Querés recibir ofertas y promociones por WhatsApp?</strong></p>
-                <p style="font-size: 0.9rem; color: #adb5bd;">
-                    Te avisamos cuando hay partidos importantes, promociones especiales y eventos.
-                </p>
-                <div class="options-container">
-                    <button class="option-btn" onclick="window.selectOffers(true)" style="background: #25D366; color: white; border: none;">
-                        <i class="fas fa-check"></i> Sí, quiero recibir
-                    </button>
-                    <button class="option-btn" onclick="window.selectOffers(false)">
-                        <i class="fas fa-times"></i> No, gracias
-                    </button>
-                </div>
+        const messageDiv = createBotMessage(`
+            <p><strong>📢 ¿Querés recibir ofertas y promociones por WhatsApp?</strong></p>
+            <p style="font-size: 0.9rem; color: #adb5bd;">Te avisamos cuando hay partidos importantes</p>
+            <div class="options-container">
+                <button class="option-btn" onclick="window.selectOffers(true)" style="background: #25D366; color: white; border: none;">
+                    <i class="fas fa-check"></i> Sí
+                </button>
+                <button class="option-btn" onclick="window.selectOffers(false)">
+                    <i class="fas fa-times"></i> No
+                </button>
             </div>
-        `;
+        `);
         
         DOM.messagesArea.appendChild(messageDiv);
         scrollToBottom();
     }
 
-    // Seleccionar ofertas global
     window.selectOffers = function(accept) {
         BotState.bookingData.offers = accept;
-        addUserMessage(accept ? 'Sí, quiero recibir ofertas 📢' : 'No, gracias');
+        addUserMessage(accept ? 'Sí, quiero recibir ofertas' : 'No, gracias');
         
         showTypingIndicator();
         setTimeout(() => {
@@ -437,19 +566,11 @@ window.confirmDate = function() {
     };
 
     // ============================================
-    // 6. RESUMEN Y ENVÍO A WHATSAPP
+    // RESUMEN DE RESERVA
     // ============================================
     function showBookingSummary() {
         const data = BotState.bookingData;
         const zone = data.zone;
-        
-        const consumptionText = zone.minConsumption > 0 
-            ? `💰 Consumo mínimo: $${zone.minConsumption}` 
-            : '✅ Sin consumo mínimo';
-        
-        const offersText = data.offers 
-            ? '✅ Aceptó recibir ofertas' 
-            : '❌ No aceptó ofertas';
         
         const summaryHtml = `
             <div class="message bot-message">
@@ -458,51 +579,22 @@ window.confirmDate = function() {
                     <p><strong style="color: #f4a261;">✅ ¡RESERVA LISTA!</strong></p>
                     
                     <div class="booking-summary">
-                        <div class="summary-item">
-                            <i class="fas fa-user"></i>
-                            <span><strong>${data.name}</strong></span>
-                        </div>
-                        <div class="summary-item">
-                            <i class="fas fa-map-marker-alt"></i>
-                            <span>${zone.name}</span><br>
-                            <small style="color: #f4a261;">${consumptionText}</small>
-                        </div>
-                        <div class="summary-item">
-                            <i class="fas fa-users"></i>
-                            <span>${data.people} personas</span>
-                        </div>
-                        <div class="summary-item">
-                            <i class="fas fa-calendar"></i>
-                            <span>${data.date}</span>
-                        </div>
-                        <div class="summary-item">
-                            <i class="fas fa-clock"></i>
-                            <span>${data.time}</span>
-                        </div>
-                        <div class="summary-item">
-                            <i class="fas fa-chair"></i>
-                            <span>Mesa preferida: <strong>${data.table}</strong></span>
-                        </div>
-                        <div class="summary-item">
-                            <i class="fas fa-bell"></i>
-                            <span>${offersText}</span>
-                        </div>
+                        <div class="summary-item"><i class="fas fa-user"></i> <span><strong>${data.name}</strong></span></div>
+                        <div class="summary-item"><i class="fas fa-map-marker-alt"></i> <span>${zone.name}</span></div>
+                        <div class="summary-item"><i class="fas fa-users"></i> <span>${data.people} personas</span></div>
+                        <div class="summary-item"><i class="fas fa-calendar"></i> <span>${data.date}</span></div>
+                        <div class="summary-item"><i class="fas fa-clock"></i> <span>${data.time}</span></div>
+                        <div class="summary-item"><i class="fas fa-chair"></i> <span>Mesa: <strong>${data.table}</strong></span></div>
                     </div>
-                    
-                    <p style="margin-top: 1rem;">📱 Hacé clic en el botón de abajo para ENVIAR LA RESERVA a nuestro WhatsApp.</p>
                     
                     <div class="options-container">
                         <a href="https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(generateWhatsAppMessage())}" 
                            target="_blank" 
                            class="option-btn" 
                            style="background: #25D366; color: white; border: none; width: 100%; justify-content: center; padding: 1rem;">
-                            <i class="fab fa-whatsapp"></i> ENVIAR RESERVA AHORA
+                            <i class="fab fa-whatsapp"></i> ENVIAR RESERVA
                         </a>
                     </div>
-                    
-                    <p style="margin-top: 1rem; font-size: 0.8rem; color: #adb5bd;">
-                        <i class="fas fa-clock"></i> Te confirmamos disponibilidad en minutos
-                    </p>
                 </div>
             </div>
         `;
@@ -513,57 +605,75 @@ window.confirmDate = function() {
     }
 
     // ============================================
-    // 7. GENERAR MENSAJE DE WHATSAPP
+    // GENERAR MENSAJE DE WHATSAPP
     // ============================================
     function generateWhatsAppMessage() {
         const data = BotState.bookingData;
         const zone = data.zone;
-        const fecha = new Date().toLocaleDateString('es-ES');
-        const hora = new Date().toLocaleTimeString('es-ES');
-        
-        const consumo = zone.minConsumption > 0 
-            ? `💰 Consumo mínimo: $${zone.minConsumption}` 
-            : '✅ Sin consumo mínimo';
-        
-        const ofertas = data.offers 
-            ? '✅ Aceptó recibir promociones' 
-            : '❌ No aceptó ofertas';
         
         return `🍻 *NUEVA RESERVA - SPORTBAR 23 Y 12*
         
 👤 *Cliente:* ${data.name}
 👥 *Personas:* ${data.people}
 📍 *Zona:* ${zone.name}
-${consumo}
+💰 ${zone.minConsumption > 0 ? 'Consumo mínimo: $' + zone.minConsumption : 'Sin consumo mínimo'}
 
 📅 *Fecha:* ${data.date}
 ⏰ *Hora:* ${data.time}
 🪑 *Mesa preferida:* ${data.table}
 
-📱 *Contacto:* +53 ${CONFIG.whatsappNumber}
-📢 *Ofertas:* ${ofertas}
+📢 *Ofertas:* ${data.offers ? '✅ Aceptó' : '❌ No aceptó'}
 
-───────────────
-📆 *Reserva generada:* ${fecha} - ${hora}
-✅ *Estado:* Pendiente de confirmación
-───────────────
-
-⚡ *Respondé este mensaje para confirmar disponibilidad.*`;
+✅ *Estado:* Pendiente de confirmación`;
     }
 
     // ============================================
-    // LOCAL STORAGE
+    // FUNCIONES AUXILIARES
     // ============================================
+    function formatDate(date) {
+        if (!date) return '';
+        const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+        return `${date.getDate()} de ${meses[date.getMonth()]} de ${date.getFullYear()}`;
+    }
+
+    function createBotMessage(html) {
+        const div = document.createElement('div');
+        div.className = 'message bot-message';
+        div.innerHTML = `
+            <div class="message-avatar"><i class="fas fa-robot"></i></div>
+            <div class="message-content">${html}</div>
+        `;
+        return div;
+    }
+
+    function addBotMessage(text) {
+        const div = createBotMessage(`<p>${text.replace(/\n/g, '<br>')}</p>`);
+        DOM.messagesArea.appendChild(div);
+        scrollToBottom();
+    }
+
+    function addUserMessage(text) {
+        const div = document.createElement('div');
+        div.className = 'message user-message';
+        div.innerHTML = `
+            <div class="message-avatar"><i class="fas fa-user"></i></div>
+            <div class="message-content"><p>${text}</p></div>
+        `;
+        DOM.messagesArea.appendChild(div);
+        scrollToBottom();
+    }
+
+    function showTypingIndicator() { DOM.typingIndicator.classList.add('active'); scrollToBottom(); }
+    function hideTypingIndicator() { DOM.typingIndicator.classList.remove('active'); }
+    function scrollToBottom() { DOM.chatContainer.scrollTop = DOM.chatContainer.scrollHeight; }
+    function focusInput() { DOM.userInput.focus(); }
+
     function saveBookingToHistory() {
         try {
             const history = JSON.parse(localStorage.getItem('sportbar_booking_history') || '[]');
-            history.push({
-                ...BotState.bookingData,
-                timestamp: new Date().toISOString()
-            });
+            history.push({...BotState.bookingData, timestamp: new Date().toISOString()});
             if (history.length > 20) history.shift();
             localStorage.setItem('sportbar_booking_history', JSON.stringify(history));
-            localStorage.setItem('sportbar_last_booking', JSON.stringify(BotState.bookingData));
         } catch (e) {}
     }
 
@@ -578,9 +688,6 @@ ${consumo}
         try { localStorage.setItem(key, value); } catch (e) {}
     }
 
-    // ============================================
-    // REINICIAR CONVERSACIÓN
-    // ============================================
     function resetConversation() {
         BotState.currentStep = 0;
         BotState.bookingData = {
@@ -592,60 +699,12 @@ ${consumo}
             table: 'cualquiera',
             offers: null
         };
-        BotState.isWaitingResponse = false;
-        
         DOM.messagesArea.innerHTML = '';
         addBotMessage(CONFIG.welcomeMessage);
     }
 
     // ============================================
-    // FUNCIONES AUXILIARES
-    // ============================================
-    function addBotMessage(text) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = 'message bot-message';
-        messageDiv.innerHTML = `
-            <div class="message-avatar"><i class="fas fa-robot"></i></div>
-            <div class="message-content">
-                <p>${text.replace(/\n/g, '<br>')}</p>
-            </div>
-        `;
-        DOM.messagesArea.appendChild(messageDiv);
-        scrollToBottom();
-    }
-
-    function addUserMessage(text) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = 'message user-message';
-        messageDiv.innerHTML = `
-            <div class="message-avatar"><i class="fas fa-user"></i></div>
-            <div class="message-content">
-                <p>${text}</p>
-            </div>
-        `;
-        DOM.messagesArea.appendChild(messageDiv);
-        scrollToBottom();
-    }
-
-    function showTypingIndicator() {
-        DOM.typingIndicator.classList.add('active');
-        scrollToBottom();
-    }
-
-    function hideTypingIndicator() {
-        DOM.typingIndicator.classList.remove('active');
-    }
-
-    function scrollToBottom() {
-        DOM.chatContainer.scrollTop = DOM.chatContainer.scrollHeight;
-    }
-
-    function focusInput() {
-        DOM.userInput.focus();
-    }
-
-    // ============================================
-    // ✅ INICIAR - SOLO UNA VEZ, SIN EVENTOS
+    // INICIAR
     // ============================================
     init();
 
