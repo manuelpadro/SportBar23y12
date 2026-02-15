@@ -92,7 +92,7 @@ body {
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    opacity: 0.3; /* Para que se vea el overlay oscuro encima */
+    opacity: 0.3;
     z-index: 1;
 }
 
@@ -103,7 +103,7 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.7) 100%);
+    background: linear-gradient(135deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.8) 100%);
     z-index: 2;
 }
 
@@ -112,6 +112,14 @@ body {
     z-index: 3;
     width: 100%;
 }
+
+.hero-content {
+    text-align: center;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: var(--spacing-md);
+}
+
 /* Pelota animada */
 .soccer-ball {
     position: absolute;
@@ -122,6 +130,13 @@ body {
     animation: float 6s ease-in-out infinite;
     pointer-events: none;
     opacity: 0.8;
+    z-index: 3;
+}
+
+@media (max-width: 768px) {
+    .soccer-ball {
+        display: none;
+    }
 }
 
 .ball {
@@ -194,6 +209,17 @@ body {
     margin-top: var(--spacing-lg);
 }
 
+@media (max-width: 480px) {
+    .hero-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+    .hero-buttons .btn {
+        width: 100%;
+        max-width: 280px;
+    }
+}
+
 /* ===== BOTONES ===== */
 .btn {
     display: inline-flex;
@@ -245,6 +271,7 @@ body {
     font-size: 2rem;
     animation: bounce 2s infinite;
     text-decoration: none;
+    z-index: 4;
 }
 
 @keyframes bounce {
@@ -321,7 +348,7 @@ body {
     transition: 0.3s;
 }
 
-.feature:hover {
+.feature:hover, .atmosphere-feature:hover {
     transform: translateY(-10px);
     border: 1px solid var(--primary);
 }
@@ -337,7 +364,7 @@ body {
 .highlight { display: block; color: var(--accent); font-weight: 600; margin-top: 0.5rem; }
 
 /* ===== TAGS ===== */
-.tags {
+.tags, .location-features {
     display: flex;
     flex-wrap: wrap;
     gap: var(--spacing-sm);
@@ -345,7 +372,7 @@ body {
     margin: var(--spacing-md) 0;
 }
 
-.tag {
+.tag, .feature-badge {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
@@ -353,14 +380,24 @@ body {
     background: rgba(255,255,255,0.05);
     border-radius: 50px;
     transition: 0.3s;
+    font-size: 0.95rem;
 }
 
-.tag:hover {
+.tag:hover, .feature-badge:hover {
     transform: translateY(-3px);
     border: 1px solid var(--primary);
 }
 
-.tag i { color: var(--accent); }
+.tag i, .feature-badge i { color: var(--accent); }
+
+/* ===== ATMOSPHERE ===== */
+.atmosphere-description {
+    font-size: 1.2rem;
+    color: var(--gray);
+    text-align: center;
+    max-width: 900px;
+    margin: 0 auto var(--spacing-lg);
+}
 
 /* ===== MENÚ CON OVERLAY ===== */
 .menu-gallery { margin: var(--spacing-lg) 0; }
@@ -368,6 +405,12 @@ body {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
     gap: var(--spacing-md);
+}
+
+@media (max-width: 768px) {
+    .gallery-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .gallery-item {
@@ -383,6 +426,12 @@ body {
     position: relative;
     height: 300px;
     overflow: hidden;
+}
+
+@media (max-width: 768px) {
+    .menu-bebidas, .menu-comida {
+        height: 250px;
+    }
 }
 
 .menu-bebidas img, .menu-comida img {
@@ -409,6 +458,13 @@ body {
 }
 
 .gallery-item:hover .image-overlay { opacity: 1; }
+
+@media (max-width: 768px) {
+    .image-overlay {
+        opacity: 1;
+        background: rgba(0,0,0,0.5);
+    }
+}
 
 .view-image-btn {
     background: var(--primary);
@@ -461,6 +517,12 @@ body {
     border-radius: var(--radius-lg);
     overflow: hidden;
     animation: slideIn 0.3s;
+}
+
+@media (max-width: 768px) {
+    .modal-content {
+        margin: 10% var(--spacing-sm);
+    }
 }
 
 @keyframes slideIn {
@@ -594,6 +656,14 @@ body {
 .location-card h3 { color: var(--primary); margin-bottom: var(--spacing-sm); }
 .location-card p { color: var(--gray); }
 
+.location-features {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+    justify-content: center;
+    margin-top: var(--spacing-md);
+}
+
 /* ===== BOTONES FLOTANTES ===== */
 .float-buttons {
     position: fixed;
@@ -603,6 +673,14 @@ body {
     flex-direction: column;
     gap: 15px;
     z-index: 9999;
+}
+
+@media (max-width: 768px) {
+    .float-buttons {
+        bottom: 20px;
+        right: 20px;
+        gap: 10px;
+    }
 }
 
 .float-button {
@@ -619,6 +697,14 @@ body {
     transition: 0.3s;
     font-size: 0.7rem;
     font-weight: 600;
+}
+
+@media (max-width: 768px) {
+    .float-button {
+        width: 50px;
+        height: 50px;
+    }
+    .float-button span { display: none; }
 }
 
 .float-button i { font-size: 1.5rem; }
@@ -640,8 +726,26 @@ body {
     margin-top: var(--spacing-lg);
 }
 
-.footer-logo h2 { color: var(--primary); font-size: 2rem; }
-.footer-info p { color: var(--gray); display: flex; align-items: center; gap: 0.5rem; }
+.footer-content {
+    text-align: center;
+}
+
+.footer-logo h2 { color: var(--primary); font-size: 2rem; margin-bottom: var(--spacing-xs); }
+.footer-logo p { color: var(--gray); }
+
+.footer-info {
+    margin: var(--spacing-md) 0;
+}
+
+.footer-info p { 
+    color: var(--gray); 
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
 .footer-info i { color: var(--accent); }
 
 .social-links {
@@ -669,21 +773,8 @@ body {
     transform: translateY(-5px);
 }
 
-/* ===== RESPONSIVE ===== */
-@media (max-width: 768px) {
-    .soccer-ball { display: none; }
-    .hero-buttons { flex-direction: column; align-items: center; }
-    .btn { width: 100%; max-width: 300px; }
-    .booking-options { grid-template-columns: 1fr; }
-    .gallery-grid { grid-template-columns: 1fr; }
-    .menu-bebidas, .menu-comida { height: 250px; }
-    .float-buttons { bottom: 20px; right: 20px; }
-    .float-button { width: 50px; height: 50px; }
-    .float-button span { display: none; }
-}
-
-@media (max-width: 480px) {
-    .container { padding: 0 var(--spacing-sm); }
-    .main-title { font-size: 2.5rem; }
-    .title-line { font-size: 1.8rem; }
+/* ===== ANIMACIONES ===== */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
