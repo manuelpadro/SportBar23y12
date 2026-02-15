@@ -17,11 +17,12 @@
             { id: 'interior', name: '🪑 Estándar Interior', minConsumption: 0, minPeople: 2, maxPeople: 6, keywords: ['interior', 'adentro', 'dentro'] },
             { id: 'exterior', name: '🌳 Estándar Exterior', minConsumption: 0, minPeople: 2, maxPeople: 8, keywords: ['exterior', 'afuera', 'terraza'] },
             { id: 'barra', name: '🍻 Barra', minConsumption: 0, minPeople: 1, maxPeople: 2, keywords: ['barra', 'bar'] }
+            { id: 'billar', name: '🎱 Billar', minComsumption: 0, minPeople: 2, maxPeople:4, keywords: ['billar', 'pool', 'mesa de billar', 'jugar']    
         ],
         
         availableTimes: ['07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'],
         
-        welcomeMessage: '🏈 ¡Hola! Soy SportBot.\n\nPodés escribirme natural, ej: "4 personas en VIP mañana 20:00"\n\n¿Cómo te llamás?'
+        welcomeMessage: '🏈🤖 ¡Hola! Soy **SportBot**, tu asistente de reservas.\n\n¿En qué te puedo ayudar hoy? Podés decirme, por ejemplo: "4 personas en VIP mañana 20:00" o "2 personas para billar"\n\nPero primero, ¿cómo te llamás?
     };
 
     // ============================================
