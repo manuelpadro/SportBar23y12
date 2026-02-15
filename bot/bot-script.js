@@ -487,3 +487,100 @@
     init();
 
 })();
+
+
+// ============================================
+// MEJORAS PARA MÓVIL
+// ============================================
+
+// 1. Prevenir que el teclado oculte el input
+function setupMobileKeyboard() {
+    const input = document.getElementById('userInput');
+    const chatContainer = document.getElementById('chatContainer');
+    
+    if (!input || !chatContainer) return;
+    
+    // Enfocar input sin hacer scroll brusco
+    input.addEventListener('focus', function() {
+        setTimeout(() => {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }, 300);
+    });
+    
+    // Ajustar cuando el teclado aparece/desaparece
+    if ('visualViewport' in window) {
+        window.visualViewport.addEventListener('resize', function() {
+            // En móvil, el teclado cambia el tamaño del viewport
+            setTimeout(() => {
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }, 100);
+        });
+    }
+}
+
+// 2. Hacer los botones más táctiles
+function setupTouchButtons() {
+    const buttons = document.querySelectorAll('.option-btn, .send-btn');
+    
+    buttons.forEach(btn => {
+        btn.addEventListener('touchstart', function(e) {
+            // Feedback táctil inmediato
+            this.style.transform = 'scale(0.98)';
+        });
+        
+        btn.addEventListener('touchend', function(e) {
+            this.style.transform = 'scale(1)';
+        });
+        
+        btn.addEventListener('touchcancel', function(e) {
+            this.style.transform = 'scale(1)';
+        });
+    });
+}
+
+// 3. Mejorar el date picker en móvil
+function setupMobileDatePicker() {
+    // Forzar que el date picker se vea bien
+    const dateInput = document.getElementById('datePicker');
+    if (dateInput) {
+        dateInput.addEventListener('click', function(e) {
+            // En móvil, abrir el date picker nativo
+            this.showPicker();
+        });
+    }
+}
+
+// 4. Scroll suave automático
+function setupSmoothScroll() {
+    const chatContainer = document.getElementById('chatContainer');
+    if (!chatContainer) return;
+    
+    // Usar MutationObserver para detectar nuevos mensajes
+    const observer = new MutationObserver(() => {
+        chatContainer.scrollTo({
+            top: chatContainer.scrollHeight,
+            behavior: 'smooth'
+        });
+    });
+    
+    observer.observe(chatContainer, {
+        childList: true,
+        subtree: true,
+        characterData: true
+    });
+}
+
+// Llamar a todas las mejoras
+function setupMobileOptimizations() {
+    setupMobileKeyboard();
+    setupTouchButtons();
+    setupMobileDatePicker();
+    setupSmoothScroll();
+}
+
+// Agregar al init
+const originalInit = init;
+init = function() {
+    originalInit();
+    setupMobileOptimizations();
+};
