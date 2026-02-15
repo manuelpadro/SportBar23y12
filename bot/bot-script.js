@@ -7,7 +7,7 @@
     'use strict';
 
     // ============================================
-    // CONFIGURACIÓN
+    // CONFIGURACIÓN - CORREGIDA
     // ============================================
     const CONFIG = {
         whatsappNumber: '5358873126',
@@ -16,13 +16,13 @@
             { id: 'vip', name: '🥇 VIP', minConsumption: 3000, minPeople: 4, maxPeople: 8, keywords: ['vip', 'exclusivo', 'privado'] },
             { id: 'interior', name: '🪑 Estándar Interior', minConsumption: 0, minPeople: 2, maxPeople: 6, keywords: ['interior', 'adentro', 'dentro'] },
             { id: 'exterior', name: '🌳 Estándar Exterior', minConsumption: 0, minPeople: 2, maxPeople: 8, keywords: ['exterior', 'afuera', 'terraza'] },
-            { id: 'barra', name: '🍻 Barra', minConsumption: 0, minPeople: 1, maxPeople: 2, keywords: ['barra', 'bar'] }
-            { id: 'billar', name: '🎱 Billar', minComsumption: 0, minPeople: 2, maxPeople:4, keywords: ['billar', 'pool', 'mesa de billar', 'jugar']    
+            { id: 'barra', name: '🍻 Barra', minConsumption: 0, minPeople: 1, maxPeople: 2, keywords: ['barra', 'bar'] },
+            { id: 'billar', name: '🎱 Billar', minConsumption: 0, minPeople: 2, maxPeople: 4, keywords: ['billar', 'pool', 'mesa de billar', 'jugar'] }
         ],
         
         availableTimes: ['07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'],
         
-        welcomeMessage: '🏈🤖 ¡Hola! Soy **SportBot**, tu asistente de reservas.\n\n¿En qué te puedo ayudar hoy? Podés decirme, por ejemplo: "4 personas en VIP mañana 20:00" o "2 personas para billar"\n\nPero primero, ¿cómo te llamás?
+        welcomeMessage: '🏈🤖 ¡Hola! Soy **SportBot**, tu asistente de reservas.\n\n¿En qué te puedo ayudar hoy? Podés decirme, por ejemplo: "4 personas en VIP mañana 20:00" o "2 personas para billar"\n\nPero primero, ¿cómo te llamás?'
     };
 
     // ============================================
@@ -132,7 +132,7 @@
     };
 
     // ============================================
-    // INICIALIZACIÓN
+    // FUNCIONES PRINCIPALES
     // ============================================
     function init() {
         if (BotState.initialized) return;
@@ -142,6 +142,9 @@
         setupEventListeners();
         focusInput();
         addBotMessage(CONFIG.welcomeMessage);
+        
+        // Inicializar mejoras móvil
+        setupMobileOptimizations();
     }
 
     function setupEventListeners() {
@@ -274,16 +277,14 @@
     }
 
     function showZoneSelection() {
-    let html = '<p>📍 Elegí una zona:</p><div class="options-container">';
-    
-    CONFIG.zones.forEach(z => {
-        html += `<button class="option-btn" onclick="window.selectZone('${z.id}')">${z.name}</button>`;
-    });
-    
-    html += '</div>';
-    DOM.messagesArea.appendChild(createBotMessage(html));
-    scrollToBottom();
-}
+        let html = '<p>📍 Elegí una zona:</p><div class="options-container">';
+        CONFIG.zones.forEach(z => {
+            html += `<button class="option-btn" onclick="window.selectZone('${z.id}')">${z.name}</button>`;
+        });
+        html += '</div>';
+        DOM.messagesArea.appendChild(createBotMessage(html));
+        scrollToBottom();
+    }
 
     window.selectZone = function(id) {
         BotState.bookingData.zone = CONFIG.zones.find(z => z.id === id);
@@ -343,28 +344,27 @@
     };
 
     function showTableOptions() {
-    const zone = BotState.bookingData.zone;
-    let html = '<p>🪑 Elegí una opción:</p><div class="options-container">';
-    
-    if (zone && zone.id === 'billar') {
-        html += `
-            <button class="option-btn" onclick="window.selectTable('Billar 1')">🎱 Mesa Billar 1</button>
-            <button class="option-btn" onclick="window.selectTable('Billar 2')">🎱 Mesa Billar 2</button>
-            <button class="option-btn" onclick="window.selectTable('Cualquiera con disponibilidad')">Cualquiera</button>
-        `;
-    } else {
-        // Para otras zonas, mostrar opciones generales
-        html += `
-            <button class="option-btn" onclick="window.selectTable('31')">Mesa 31</button>
-            <button class="option-btn" onclick="window.selectTable('33')">Mesa 33</button>
-            <button class="option-btn" onclick="window.selectTable('Cualquiera')">Cualquiera</button>
-        `;
+        const zone = BotState.bookingData.zone;
+        let html = '<p>🪑 Elegí una opción:</p><div class="options-container">';
+        
+        if (zone && zone.id === 'billar') {
+            html += `
+                <button class="option-btn" onclick="window.selectTable('Billar 1')">🎱 Mesa Billar 1</button>
+                <button class="option-btn" onclick="window.selectTable('Billar 2')">🎱 Mesa Billar 2</button>
+                <button class="option-btn" onclick="window.selectTable('Cualquiera')">Cualquiera</button>
+            `;
+        } else {
+            html += `
+                <button class="option-btn" onclick="window.selectTable('31')">Mesa 31</button>
+                <button class="option-btn" onclick="window.selectTable('33')">Mesa 33</button>
+                <button class="option-btn" onclick="window.selectTable('Cualquiera')">Cualquiera</button>
+            `;
+        }
+        
+        html += '</div>';
+        DOM.messagesArea.appendChild(createBotMessage(html));
+        scrollToBottom();
     }
-    
-    html += '</div>';
-    DOM.messagesArea.appendChild(createBotMessage(html));
-    scrollToBottom();
-}
 
     window.selectTable = function(table) {
         BotState.bookingData.table = table;
@@ -400,16 +400,6 @@
         const d = BotState.bookingData;
         const z = d.zone;
         
-        const msg = `✅ *RESERVA*
-👤 ${d.name}
-📍 ${z.name} ${z.minConsumption > 0 ? '💰 $'+z.minConsumption : ''}
-👥 ${d.people} pers
-📅 ${d.date} ${d.time}
-🪑 Mesa ${d.table}
-📢 ${d.offers ? 'Acepta ofertas' : 'No ofertas'}
-
-📲 Enviar a WhatsApp:`;
-        
         const html = `
             <div class="message bot-message">
                 <div class="message-avatar"><i class="fas fa-robot"></i></div>
@@ -434,22 +424,22 @@
         scrollToBottom();
     }
 
-function generateMessage() {
-    const d = BotState.bookingData;
-    const z = d.zone;
-    
-    let consumoTexto = '';
-    if (z.minConsumption > 0) {
-        consumoTexto = `💰 Consumo mínimo: $${z.minConsumption}`;
-    }
-    
-    let zonaTexto = z.name;
-    if (z.id === 'billar') {
-        zonaTexto = '🎱 Billar';
-    }
-    
-    return `🍻 *NUEVA RESERVA - SPORTBAR 23 Y 12*
-    
+    function generateMessage() {
+        const d = BotState.bookingData;
+        const z = d.zone;
+        
+        let consumoTexto = '';
+        if (z.minConsumption > 0) {
+            consumoTexto = `💰 Consumo mínimo: $${z.minConsumption}`;
+        }
+        
+        let zonaTexto = z.name;
+        if (z.id === 'billar') {
+            zonaTexto = '🎱 Billar';
+        }
+        
+        return `🍻 *NUEVA RESERVA - SPORTBAR 23 Y 12*
+        
 👤 *Cliente:* ${d.name}
 📍 *Zona:* ${zonaTexto}
 ${consumoTexto}
@@ -461,7 +451,7 @@ ${consumoTexto}
 📢 *Ofertas:* ${d.offers ? '✅ Sí' : '❌ No'}
 
 ✅ *Estado:* Pendiente de confirmación`;
-}
+    }
 
     function formatDate(date) {
         return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -513,103 +503,85 @@ ${consumoTexto}
         addBotMessage(CONFIG.welcomeMessage);
     }
 
+    // ============================================
+    // MEJORAS PARA MÓVIL
+    // ============================================
+    function setupMobileKeyboard() {
+        const input = document.getElementById('userInput');
+        const chatContainer = document.getElementById('chatContainer');
+        
+        if (!input || !chatContainer) return;
+        
+        input.addEventListener('focus', function() {
+            setTimeout(() => {
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }, 300);
+        });
+        
+        if ('visualViewport' in window) {
+            window.visualViewport.addEventListener('resize', function() {
+                setTimeout(() => {
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                }, 100);
+            });
+        }
+    }
+
+    function setupTouchButtons() {
+        const buttons = document.querySelectorAll('.option-btn, .send-btn');
+        
+        buttons.forEach(btn => {
+            btn.addEventListener('touchstart', function(e) {
+                this.style.transform = 'scale(0.98)';
+            });
+            
+            btn.addEventListener('touchend', function(e) {
+                this.style.transform = 'scale(1)';
+            });
+            
+            btn.addEventListener('touchcancel', function(e) {
+                this.style.transform = 'scale(1)';
+            });
+        });
+    }
+
+    function setupMobileDatePicker() {
+        const dateInput = document.getElementById('datePicker');
+        if (dateInput) {
+            dateInput.addEventListener('click', function(e) {
+                this.showPicker();
+            });
+        }
+    }
+
+    function setupSmoothScroll() {
+        const chatContainer = document.getElementById('chatContainer');
+        if (!chatContainer) return;
+        
+        const observer = new MutationObserver(() => {
+            chatContainer.scrollTo({
+                top: chatContainer.scrollHeight,
+                behavior: 'smooth'
+            });
+        });
+        
+        observer.observe(chatContainer, {
+            childList: true,
+            subtree: true,
+            characterData: true
+        });
+    }
+
+    function setupMobileOptimizations() {
+        setupMobileKeyboard();
+        setupTouchButtons();
+        setupMobileDatePicker();
+        setupSmoothScroll();
+    }
+
+    // ============================================
+    // INICIAR BOT
+    // ============================================
     init();
 
 })();
-
-
-// ============================================
-// MEJORAS PARA MÓVIL
-// ============================================
-
-// 1. Prevenir que el teclado oculte el input
-function setupMobileKeyboard() {
-    const input = document.getElementById('userInput');
-    const chatContainer = document.getElementById('chatContainer');
-    
-    if (!input || !chatContainer) return;
-    
-    // Enfocar input sin hacer scroll brusco
-    input.addEventListener('focus', function() {
-        setTimeout(() => {
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        }, 300);
-    });
-    
-    // Ajustar cuando el teclado aparece/desaparece
-    if ('visualViewport' in window) {
-        window.visualViewport.addEventListener('resize', function() {
-            // En móvil, el teclado cambia el tamaño del viewport
-            setTimeout(() => {
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-            }, 100);
-        });
-    }
-}
-
-// 2. Hacer los botones más táctiles
-function setupTouchButtons() {
-    const buttons = document.querySelectorAll('.option-btn, .send-btn');
-    
-    buttons.forEach(btn => {
-        btn.addEventListener('touchstart', function(e) {
-            // Feedback táctil inmediato
-            this.style.transform = 'scale(0.98)';
-        });
-        
-        btn.addEventListener('touchend', function(e) {
-            this.style.transform = 'scale(1)';
-        });
-        
-        btn.addEventListener('touchcancel', function(e) {
-            this.style.transform = 'scale(1)';
-        });
-    });
-}
-
-// 3. Mejorar el date picker en móvil
-function setupMobileDatePicker() {
-    // Forzar que el date picker se vea bien
-    const dateInput = document.getElementById('datePicker');
-    if (dateInput) {
-        dateInput.addEventListener('click', function(e) {
-            // En móvil, abrir el date picker nativo
-            this.showPicker();
-        });
-    }
-}
-
-// 4. Scroll suave automático
-function setupSmoothScroll() {
-    const chatContainer = document.getElementById('chatContainer');
-    if (!chatContainer) return;
-    
-    // Usar MutationObserver para detectar nuevos mensajes
-    const observer = new MutationObserver(() => {
-        chatContainer.scrollTo({
-            top: chatContainer.scrollHeight,
-            behavior: 'smooth'
-        });
-    });
-    
-    observer.observe(chatContainer, {
-        childList: true,
-        subtree: true,
-        characterData: true
-    });
-}
-
-// Llamar a todas las mejoras
-function setupMobileOptimizations() {
-    setupMobileKeyboard();
-    setupTouchButtons();
-    setupMobileDatePicker();
-    setupSmoothScroll();
-}
-
-// Agregar al init
-const originalInit = init;
-init = function() {
-    originalInit();
-    setupMobileOptimizations();
-};
