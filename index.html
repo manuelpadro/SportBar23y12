@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>SPORTBAR 23 y 12 - El Lugar de los Fans del Deporte</title>
-    <meta name="description" content="SportBar en La Habana: cerveza fría, comida deliciosa, partidos en vivo y atmósfera inolvidable para los verdaderos fans del deporte">
-    <meta name="keywords" content="sportbar, deporte, La Habana, cerveza, partidos en vivo, comida, 23 y 12">
-    <meta name="author" content="SPORTBAR 23 y 12">
+    <meta name="description" content="SportBar en La Habana: cerveza fría, comida deliciosa, partidos en vivo y atmósfera inolvidable">
     
     <!-- Preconnect para recursos externos -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,19 +14,14 @@
     <!-- Fuentes optimizadas -->
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
     
-    <!-- Font Awesome 6 (íconos) -->
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Estilos principales -->
     <link rel="stylesheet" href="style.css">
-    
-    <!-- Preload de imágenes críticas -->
-    <link rel="preload" href="imagenes/hero.jpg" as="image">
-    <link rel="preload" href="imagenes/menu-bebidas.jpg" as="image">
-    <link rel="preload" href="imagenes/menu-comida.jpg" as="image">
 </head>
 <body>
-    <!-- ===== HERO SECTION ===== -->
+    <!-- ===== HERO SECTION - CON FONDO CORREGIDO ===== -->
     <section class="hero" id="inicio">
         <div class="hero-overlay">
             <div class="hero-content">
@@ -54,10 +47,10 @@
                     <h2 class="title-line">DEL DEPORTE</h2>
                     
                     <p class="description">
-                        <i class="fas fa-beer" aria-hidden="true"></i> Cerveza fría, 
-                        <i class="fas fa-utensils" aria-hidden="true"></i> comida deliciosa, 
-                        <i class="fas fa-tv" aria-hidden="true"></i> partidos en vivo y 
-                        <i class="fas fa-heart" aria-hidden="true"></i> una atmósfera inolvidable
+                        <i class="fas fa-beer"></i> Cerveza fría, 
+                        <i class="fas fa-utensils"></i> comida deliciosa, 
+                        <i class="fas fa-tv"></i> partidos en vivo y 
+                        <i class="fas fa-heart"></i> una atmósfera inolvidable
                     </p>
                 </div>
                 
@@ -71,7 +64,7 @@
                 </div>
             </div>
             
-            <a href="#partidos" class="scroll-indicator" aria-label="Desplazarse">
+            <a href="#partidos" class="scroll-indicator">
                 <i class="fas fa-chevron-down"></i>
             </a>
         </div>
@@ -82,7 +75,7 @@
         <div class="container">
             <div class="section-header">
                 <h2 class="section-title">
-                    <i class="fas fa-futbol" aria-hidden="true"></i> Partidos en Vivo
+                    <i class="fas fa-futbol"></i> Partidos en Vivo
                 </h2>
                 <p class="section-subtitle">Transmisiones en HD de los mejores eventos deportivos</p>
             </div>
@@ -150,9 +143,8 @@
             
             <div class="tags">
                 <span class="tag"><i class="fas fa-paw"></i> Pet Friendly</span>
-
+                <span class="tag"><i class="fas fa-wifi"></i> WiFi Gratis</span>
                 <span class="tag"><i class="fas fa-clock"></i> 24/7</span>
-                <span class="tag"><i class="fas fa-wheelchair"></i> Accesible</span>
             </div>
         </div>
     </section>
@@ -162,7 +154,6 @@
         <div class="container">
             <div class="section-header">
                 <h2 class="section-title">LA ATMÓSFERA QUE BUSCAS</h2>
-                <p class="section-subtitle">Donde la pasión por el deporte se encuentra con la buena compañía</p>
             </div>
             
             <p class="atmosphere-description">
@@ -189,25 +180,26 @@
         </div>
     </section>
 
-    <!-- ===== MENÚ / COMIDA ===== -->
+    <!-- ===== MENÚ CON MODAL PARA IMÁGENES ===== -->
     <section class="section food" id="menu">
         <div class="container">
             <div class="section-header">
                 <h2 class="section-title">
                     <i class="fas fa-utensils"></i> NUESTRO MENÚ
                 </h2>
-                <p class="section-subtitle">Explorá nuestras deliciosas opciones de comida y bebida</p>
+                <p class="section-subtitle">Hacé clic en las imágenes para verlas en tamaño completo</p>
             </div>
             
             <div class="menu-gallery">
                 <div class="gallery-grid">
+                    <!-- Bebidas -->
                     <div class="gallery-item">
                         <div class="menu-bebidas">
-                            <img src="imagenes/menu-bebidas.jpg" alt="Menú de bebidas" loading="lazy">
+                            <img src="imagenes/menu-bebidas.jpg" alt="Menú de bebidas" class="menu-image" data-img="imagenes/menu-bebidas.jpg">
                             <div class="image-overlay">
-                                <a href="imagenes/menu-bebidas.jpg" class="view-image-btn" target="_blank">
+                                <button class="view-image-btn" data-img="imagenes/menu-bebidas.jpg">
                                     <i class="fas fa-expand"></i> Ver completo
-                                </a>
+                                </button>
                             </div>
                         </div>
                         <div class="img-caption">
@@ -216,13 +208,14 @@
                         </div>
                     </div>
                     
+                    <!-- Comida -->
                     <div class="gallery-item">
                         <div class="menu-comida">
-                            <img src="imagenes/menu-comida.jpg" alt="Menú de comida" loading="lazy">
+                            <img src="imagenes/menu-comida.jpg" alt="Menú de comida" class="menu-image" data-img="imagenes/menu-comida.jpg">
                             <div class="image-overlay">
-                                <a href="imagenes/menu-comida.jpg" class="view-image-btn" target="_blank">
+                                <button class="view-image-btn" data-img="imagenes/menu-comida.jpg">
                                     <i class="fas fa-expand"></i> Ver completo
-                                </a>
+                                </button>
                             </div>
                         </div>
                         <div class="img-caption">
@@ -232,116 +225,69 @@
                     </div>
                 </div>
             </div>
-            
-            <div class="food-highlights">
-                <div class="highlight-item">
-                    <div class="food-icon"><i class="fas fa-taco"></i></div>
-                    <h3>Tacos de Cerdo</h3>
-                    <p>Nuestra especialidad</p>
-                </div>
-                <div class="highlight-item">
-                    <div class="food-icon"><i class="fas fa-pizza-slice"></i></div>
-                    <h3>Pizza Especial</h3>
-                    <p>La favorita</p>
-                </div>
-                <div class="highlight-item">
-                    <div class="food-icon"><i class="fas fa-beer"></i></div>
-                    <h3>Cerveza Helada</h3>
-                    <p>Siempre fría</p>
-                </div>
-            </div>
         </div>
     </section>
 
-    <!-- ===== RESERVAS EXPRESS - QR + WHATSAPP ===== -->
+    <!-- ===== RESERVAS EXPRESS ===== -->
     <section class="section booking-express" id="reservas">
         <div class="container">
             <div class="booking-express-box">
                 <div class="booking-header">
                     <i class="fas fa-bolt"></i>
                     <h2>RESERVÁ EN 5 SEGUNDOS</h2>
-                    <p>Escaneá el código o hacé clic en el botón</p>
+                    <p>Tres formas de reservar tu mesa</p>
                 </div>
                 
                 <div class="booking-options">
-                    <!-- Opción QR -->
+                    <!-- QR -->
                     <div class="booking-card qr-card">
-                        <div class="card-icon">
-                            <i class="fas fa-qrcode"></i>
-                        </div>
+                        <div class="card-icon"><i class="fas fa-qrcode"></i></div>
                         <h3>ESCANEÁ EL QR</h3>
                         <div class="qr-container">
-                            <img src="imagenes/qr-whatsapp.png" alt="Código QR para reservar por WhatsApp" class="booking-qr">
+                            <img src="imagenes/qr-whatsapp.png" alt="Código QR" class="booking-qr">
                         </div>
                         <p class="qr-instruction">
                             <i class="fas fa-camera"></i> Abrí tu cámara y escaneá
                         </p>
                     </div>
                     
-                    <!-- Opción Botón WhatsApp -->
+                    <!-- WhatsApp Directo -->
                     <div class="booking-card whatsapp-card">
-                        <div class="card-icon">
-                            <i class="fab fa-whatsapp"></i>
-                        </div>
-                        <h3>CLIC Y RESERVA</h3>
-                        <div class="whatsapp-button-container">
-                            <a href="https://wa.me/5358873126?text=Hola%20quiero%20reservar%20una%20mesa%20en%20SportBar%2023%20y%2012" 
-                               class="btn-whatsapp-large" 
-                               target="_blank">
-                                <i class="fab fa-whatsapp"></i>
-                                Abrir WhatsApp
-                            </a>
-                        </div>
+                        <div class="card-icon"><i class="fab fa-whatsapp"></i></div>
+                        <h3>WHATSAPP DIRECTO</h3>
+                        <a href="https://wa.me/5358873126?text=Hola%20quiero%20reservar%20una%20mesa" 
+                           class="btn-whatsapp-large" 
+                           target="_blank">
+                            <i class="fab fa-whatsapp"></i> Abrir WhatsApp
+                        </a>
                         <p class="whatsapp-instruction">
                             <i class="fas fa-check-circle"></i> Mensaje listo para enviar
                         </p>
-                        <div class="message-preview">
-                            <span class="preview-label">Mensaje:</span>
-                            <span class="preview-text">"Hola quiero reservar una mesa..."</span>
-                        </div>
                     </div>
                     
-                    <!-- Opción Bot Conversacional -->
+                    <!-- Bot Conversacional -->
                     <div class="booking-card bot-card">
-                        <div class="card-icon">
-                            <i class="fas fa-robot"></i>
-                        </div>
+                        <div class="card-icon"><i class="fas fa-robot"></i></div>
                         <h3>BOT INTELIGENTE</h3>
-                        <div class="bot-button-container">
-                            <a href="bot/bot.html" class="btn-bot-large">
-                                <i class="fas fa-robot"></i>
-                                Hablar con Bot
-                            </a>
-                        </div>
+                        <a href="bot/bot.html" class="btn-bot-large">
+                            <i class="fas fa-robot"></i> Hablar con Bot
+                        </a>
                         <p class="bot-instruction">
                             <i class="fas fa-comments"></i> Te guía paso a paso
                         </p>
-                        <ul class="bot-features">
-                            <li><i class="fas fa-check-circle"></i> Te pregunta fecha, hora, personas</li>
-                            <li><i class="fas fa-check-circle"></i> Guarda tus datos</li>
-                            <li><i class="fas fa-check-circle"></i> Envía la reserva ordenada</li>
-                        </ul>
                     </div>
-                </div>
-                
-                <div class="booking-footer">
-                    <p>
-                        <i class="fas fa-clock"></i> Respondemos en menos de 5 minutos · 
-                        <i class="fas fa-calendar"></i> Reservá con hasta 30 días de anticipación
-                    </p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- ===== UBICACIÓN Y CONTACTO ===== -->
+    <!-- ===== UBICACIÓN ===== -->
     <section class="section location" id="ubicacion">
         <div class="container">
             <div class="section-header">
                 <h2 class="section-title">
                     <i class="fas fa-map-marker-alt"></i> VISÍTANOS
                 </h2>
-                <p class="section-subtitle">Estamos en el corazón de La Habana</p>
             </div>
             
             <div class="location-grid">
@@ -349,9 +295,6 @@
                     <div class="location-icon"><i class="fas fa-map-pin"></i></div>
                     <h3>Dirección</h3>
                     <p>23 y 12, Vedado<br>La Habana, Cuba</p>
-                    <button class="btn outline" id="btnMapa">
-                        <i class="fas fa-map-marked-alt"></i> Ver mapa
-                    </button>
                 </div>
                 
                 <div class="location-card">
@@ -363,21 +306,11 @@
                 <div class="location-card">
                     <div class="location-icon"><i class="fas fa-phone"></i></div>
                     <h3>Contacto</h3>
-                    <p><strong>+53 58873126</strong></p>
-                    <a href="tel:+5358873126" class="btn outline">
-                        <i class="fas fa-phone"></i> Llamar
-                    </a>
-                    <a href="https://wa.me/5358873126?text=Hola%20quiero%20reservar%20una%20mesa%20en%20SportBar%2023%20y%2012" class="btn whatsapp-btn" target="_blank">
+                    <p><strong>+53 5887 3126</strong></p>
+                    <a href="https://wa.me/5358873126" class="btn whatsapp-btn" target="_blank">
                         <i class="fab fa-whatsapp"></i> WhatsApp
                     </a>
                 </div>
-            </div>
-            
-            <div class="location-features">
-                <span class="feature-badge"><i class="fas fa-utensils"></i> Dine-In</span>
-                <span class="feature-badge"><i class="fas fa-paw"></i> Pet Friendly</span>
-                <span class="feature-badge"><i class="fas fa-users"></i> Grupos</span>
-                <span class="feature-badge"><i class="fas fa-wheelchair"></i> Accesible</span>
             </div>
         </div>
     </section>
@@ -393,68 +326,46 @@
                 
                 <div class="footer-info">
                     <p><i class="fas fa-map-marker-alt"></i> 23 y 12, Vedado, La Habana</p>
-                    <p><i class="fas fa-phone"></i> +53 58873126</p>
+                    <p><i class="fas fa-phone"></i> +53 5887 3126</p>
                     <p><i class="fas fa-clock"></i> 24/7 · Siempre abiertos</p>
                 </div>
                 
                 <div class="social-links">
-                    <a href="#" class="https://www.facebook.com/share/188wXNnLxJ/?mibextid=wwXIfr"><i class="fab fa-facebook-f"></i></a>
-                    <a href="#" class="https://www.instagram.com/sportbar_23y12?igsh=NzN6NHY1dHR3ejRq"><i class="fab fa-instagram"></i></a>
+                    <a href="#" class="social-link"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
                     <a href="https://wa.me/5358873126" class="social-link" target="_blank"><i class="fab fa-whatsapp"></i></a>
-                </div>
-                
-                <div class="footer-bottom">
-                    <p>&copy; 2026 SPORTBAR 23 y 12. Todos los derechos reservados.</p>
                 </div>
             </div>
         </div>
     </footer>
 
-    <!-- ===== BOTÓN FLOTANTE WHATSAPP + QR ===== -->
-    <div class="float-buttons">
-        <a href="bot/bot.html" class="float-button float-bot" aria-label="Bot de reservas">
-            <i class="fas fa-robot"></i>
-            <span>Bot</span>
-        </a>
-        
-        <a href="https://wa.me/5358873126?text=Hola%20quiero%20reservar%20una%20mesa%20en%20SportBar%2023%20y%2012" 
-           class="float-button float-whatsapp" 
-           target="_blank"
-           aria-label="Reservar por WhatsApp">
-            <i class="fab fa-whatsapp"></i>
-            <span>WhatsApp</span>
-        </a>
-        
-        <button class="float-button float-qr" id="showQrModal" aria-label="Mostrar código QR">
-            <i class="fas fa-qrcode"></i>
-            <span>QR</span>
-        </button>
-    </div>
-
-    <!-- ===== MODAL PARA QR (VERSIÓN GRANDE) ===== -->
-    <div id="qrModal" class="modal">
-        <div class="modal-content modal-qr">
+    <!-- ===== MODAL PARA IMÁGENES ===== -->
+    <div id="imageModal" class="modal">
+        <div class="modal-content">
             <div class="modal-header">
-                <h3><i class="fas fa-qrcode"></i> RESERVÁ CON UN ESCANEO</h3>
-                <button class="close-modal" id="closeQrModal">&times;</button>
+                <h3><i class="fas fa-image"></i> Menú SPORTBAR</h3>
+                <button class="close-modal" id="closeImageModal">&times;</button>
             </div>
             <div class="modal-body">
-                <img src="imagenes/qr-whatsapp.png" alt="Código QR de WhatsApp" class="modal-qr-image">
-                <p class="modal-qr-text">
-                    1. Abrí la cámara de tu celular<br>
-                    2. Escaneá este código<br>
-                    3. Enviá el mensaje listo
-                </p>
-                <a href="https://wa.me/5358873126?text=Hola%20quiero%20reservar%20una%20mesa%20en%20SportBar%2023%20y%2012" 
-                   class="btn primary" 
-                   target="_blank">
-                    <i class="fab fa-whatsapp"></i> Abrir WhatsApp directamente
-                </a>
+                <img src="" alt="" id="modalImage">
             </div>
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="script.js" defer></script>
+    <!-- Botones flotantes -->
+    <div class="float-buttons">
+        <a href="bot/bot.html" class="float-button float-bot">
+            <i class="fas fa-robot"></i>
+            <span>Bot</span>
+        </a>
+        <a href="https://wa.me/5358873126?text=Hola%20quiero%20reservar%20una%20mesa" 
+           class="float-button float-whatsapp" 
+           target="_blank">
+            <i class="fab fa-whatsapp"></i>
+            <span>WhatsApp</span>
+        </a>
+    </div>
+
+    <script src="script.js"></script>
 </body>
 </html>
