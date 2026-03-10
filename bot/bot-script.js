@@ -1,6 +1,6 @@
 /**
- * SPORTBAR 23 Y 12 - BOT COMPLETO (SIN TELÉFONO)
- * Versión: 4.1 - Sin solicitud de número de teléfono
+ * SPORTBAR 23 Y 12 - BOT SIMPLE
+ * Versión: 5.0 - Sin idiomas, sin i18n, sin teléfono
  */
 
 (function() {
@@ -11,7 +11,7 @@
     // ============================================
     const CONFIG = {
         whatsappNumber: '5358873126',
-        merchantCode: 'SPORTBAR2312', // Tu código de comercio Transfermóvil
+        merchantCode: 'SPORTBAR2312', // Cambiá por tu código de Transfermóvil
         depositAmount: 500, // Señal en CUP
         
         zones: [
@@ -26,7 +26,9 @@
             '07:00', '08:00', '09:00', '10:00', '11:00', '12:00', 
             '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', 
             '19:00', '20:00', '21:00', '22:00', '23:00'
-        ]
+        ],
+        
+        welcomeMessage: '🏈 ¡Hola! Soy **SportBot**, tu asistente virtual.\n\n¿Cómo te llamas?'
     };
 
     // ============================================
@@ -105,7 +107,7 @@
                     return {
                         allowed: false,
                         reason: 'bloqueado',
-                        message: I18n.t('spam_blocked', minutosRestantes)
+                        message: `⛔ Demasiados intentos. Esperá ${minutosRestantes} minutos.`
                     };
                 } else {
                     this.attempts.bloqueadoHasta = null;
@@ -119,7 +121,7 @@
                     return {
                         allowed: false,
                         reason: 'muy_seguido',
-                        message: I18n.t('spam_wait', segundosRestantes)
+                        message: `⏳ Esperá ${segundosRestantes} segundos entre reservas.`
                     };
                 }
             }
@@ -129,7 +131,7 @@
                 return {
                     allowed: false,
                     reason: 'limite_hora',
-                    message: I18n.t('spam_hour', this.limits.maxReservasPorHora)
+                    message: `⏰ Alcanzaste el límite de ${this.limits.maxReservasPorHora} reservas por hora.`
                 };
             }
             
@@ -138,7 +140,7 @@
                 return {
                     allowed: false,
                     reason: 'limite_dia',
-                    message: I18n.t('spam_day', this.limits.maxReservasPorDia)
+                    message: `📅 Alcanzaste el límite de ${this.limits.maxReservasPorDia} reservas por día.`
                 };
             }
             
@@ -209,6 +211,59 @@
     };
 
     // ============================================
+    // VALIDACIONES
+    // ============================================
+    const Validators = {
+        name: function(text) {
+            if (!text || text.trim().length < 2) {
+                return { valid: false, message: 'El nombre debe tener al menos 2 caracteres' };
+            }
+            if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(text)) {
+                return { valid: false, message: 'Usá solo letras (sin números ni símbolos)' };
+            }
+            return { valid: true, value: text.trim() };
+        },
+        
+        people: function(text, zone) {
+            const num = parseInt(text);
+            if (isNaN(num)) {
+                return { valid: false, message: 'Por favor, ingresá un número válido' };
+            }
+            if (num < zone.minPeople) {
+                return { 
+                    valid: false, 
+                    message: `Mínimo ${zone.minPeople} persona${zone.minPeople > 1 ? 's' : ''} para esta zona`
+                };
+            }
+            if (num > zone.maxPeople) {
+                return { 
+                    valid: false, 
+                    message: `Máximo ${zone.maxPeople} persona${zone.maxPeople > 1 ? 's' : ''} para esta zona`
+                };
+            }
+            return { valid: true, value: num };
+        },
+        
+        date: function(dateStr) {
+            if (!dateStr) {
+                return { valid: false, message: '❌ Por favor seleccioná una fecha.' };
+            }
+            
+            const selectedDate = new Date(dateStr);
+            const today = new Date();
+            
+            today.setHours(0, 0, 0, 0);
+            selectedDate.setHours(0, 0, 0, 0);
+            
+            if (selectedDate < today) {
+                return { valid: false, message: '❌ No podés elegir una fecha anterior a hoy.' };
+            }
+            
+            return { valid: true, value: dateStr };
+        }
+    };
+
+    // ============================================
     // VERIFICACIÓN HUMANA
     // ============================================
     const HumanVerification = {
@@ -228,71 +283,18 @@
             
             const html = `
                 <div style="background:rgba(244,162,97,0.1);border-radius:10px;padding:1rem;margin:0.5rem 0;">
-                    <p style="color:var(--accent);margin-bottom:0.5rem;">${I18n.t('spam_verify_question')}</p>
+                    <p style="color:var(--accent);margin-bottom:0.5rem;">🤖 Verificación anti-spam:</p>
                     <p style="font-size:1.2rem;margin-bottom:1rem;"><strong>${q.question}</strong></p>
-                    <input type="text" id="verificationAnswer" placeholder="${I18n.t('spam_verify_placeholder')}" 
+                    <input type="text" id="verificationAnswer" placeholder="Tu respuesta" 
                            style="width:100%;padding:0.8rem;background:var(--dark);border:1px solid var(--accent);border-radius:8px;color:white;margin-bottom:0.5rem;">
                     <button onclick="window.checkVerification()" 
                             style="width:100%;padding:0.8rem;background:var(--accent);color:var(--dark);border:none;border-radius:8px;font-weight:600;cursor:pointer;">
-                        ${I18n.t('spam_verify_button')}
+                        Verificar
                     </button>
                 </div>
             `;
             
             addBotMessage(html, true);
-        }
-    };
-
-    // ============================================
-    // VALIDACIONES
-    // ============================================
-    const Validators = {
-        name: function(text) {
-            if (!text || text.trim().length < 2) {
-                return { valid: false, message: I18n.t('error_name_length') };
-            }
-            if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(text)) {
-                return { valid: false, message: I18n.t('error_name_chars') };
-            }
-            return { valid: true, value: text.trim() };
-        },
-        
-        people: function(text, zone) {
-            const num = parseInt(text);
-            if (isNaN(num)) {
-                return { valid: false, message: I18n.t('error_people_nan') };
-            }
-            if (num < zone.minPeople) {
-                return { 
-                    valid: false, 
-                    message: I18n.t('error_people_min', zone.minPeople, zone.minPeople > 1 ? 's' : '')
-                };
-            }
-            if (num > zone.maxPeople) {
-                return { 
-                    valid: false, 
-                    message: I18n.t('error_people_max', zone.maxPeople, zone.maxPeople > 1 ? 's' : '')
-                };
-            }
-            return { valid: true, value: num };
-        },
-        
-        date: function(dateStr) {
-            if (!dateStr) {
-                return { valid: false, message: I18n.t('error_date_none') };
-            }
-            
-            const selectedDate = new Date(dateStr);
-            const today = new Date();
-            
-            today.setHours(0, 0, 0, 0);
-            selectedDate.setHours(0, 0, 0, 0);
-            
-            if (selectedDate < today) {
-                return { valid: false, message: I18n.t('error_date') };
-            }
-            
-            return { valid: true, value: dateStr };
         }
     };
 
@@ -308,7 +310,8 @@
             date: '',
             time: '',
             table: 'Sin preferencia',
-            offers: null
+            offers: null,
+            paid: false
         },
         isWaitingResponse: false,
         errorCount: 0,
@@ -324,8 +327,7 @@
         sendButton: document.getElementById('sendButton'),
         resetButton: document.getElementById('resetBot'),
         typingIndicator: document.getElementById('typingIndicator'),
-        chatContainer: document.getElementById('chatContainer'),
-        inputHint: document.getElementById('inputHint')
+        chatContainer: document.getElementById('chatContainer')
     };
 
     // ============================================
@@ -339,10 +341,8 @@
     // ============================================
     // FUNCIONES PRINCIPALES
     // ============================================
-    async function init() {
+    function init() {
         if (BotState.initialized) return;
-        
-        await I18n.init();
         
         if (DOM.messagesArea) {
             DOM.messagesArea.innerHTML = '';
@@ -354,11 +354,7 @@
         loadSavedData();
         setupEventListeners();
         focusInput();
-        addBotMessage(I18n.t('welcome'));
-        
-        if (DOM.inputHint) {
-            DOM.inputHint.innerHTML = `<i class="fas fa-robot"></i> ${I18n.t('input_hint')}`;
-        }
+        addBotMessage(CONFIG.welcomeMessage);
     }
 
     function setupEventListeners() {
@@ -371,20 +367,6 @@
         DOM.userInput.addEventListener('input', () => {
             DOM.sendButton.disabled = !DOM.userInput.value.trim();
         });
-        
-        document.getElementById('langEs')?.addEventListener('click', () => {
-            I18n.setLocale('es');
-        });
-        
-        document.getElementById('langEn')?.addEventListener('click', () => {
-            I18n.setLocale('en');
-        });
-        
-        window.addEventListener('languageChanged', () => {
-            if (DOM.inputHint) {
-                DOM.inputHint.innerHTML = `<i class="fas fa-robot"></i> ${I18n.t('input_hint')}`;
-            }
-        });
     }
 
     function sendMessage() {
@@ -392,7 +374,7 @@
         if (!input || BotState.isWaitingResponse) return;
         
         if (!AntiSpam.registerMessage()) {
-            addBotMessage(I18n.t('error_fast_typing'));
+            addBotMessage('⏱️ Estás escribiendo muy rápido. Por favor, esperá un momento.');
             return;
         }
         
@@ -421,11 +403,11 @@
                     handleTableInput(input);
                     break;
                 default:
-                    addBotMessage(I18n.t('error_understanding'));
+                    addBotMessage('No entendí. Usá las opciones del menú.');
                     BotState.errorCount++;
                     
                     if (BotState.errorCount > 2) {
-                        addBotMessage(I18n.t('error_help'));
+                        addBotMessage('¿Necesitás ayuda? Podés reiniciar con el botón 🔄');
                     }
             }
             
@@ -448,7 +430,7 @@
         BotState.errorCount = 0;
         localStorage.setItem('sportbar_user_name', validation.value);
         
-        addBotMessage(I18n.t('hello', validation.value));
+        addBotMessage(`¡Hola ${validation.value}! 👋`);
         setTimeout(() => {
             BotState.currentStep = 1;
             showZoneSelection();
@@ -456,7 +438,7 @@
     }
 
     function showZoneSelection() {
-        let html = `<p>${I18n.t('ask_zone')}</p><div class="options-container">`;
+        let html = '<p>📍 ¿Qué zona preferís?</p><div class="options-container">';
         CONFIG.zones.forEach(z => {
             html += `<button class="option-btn" onclick="window.selectZone('${z.id}')">${z.emoji} ${z.name}</button>`;
         });
@@ -494,24 +476,24 @@
         const todayFormatted = `${year}-${month}-${day}`;
         
         const html = `
-            <p>${I18n.t('ask_date')}</p>
+            <p>📅 Seleccioná la fecha en el calendario:</p>
             <div class="date-picker-container">
                 <input type="date" id="datePicker" min="${todayFormatted}" value="${todayFormatted}">
             </div>
             <div style="display:flex; gap:0.5rem; margin-top:1rem;">
                 <button class="option-btn" onclick="window.confirmDate()">
-                    <i class="fas fa-check"></i> ${I18n.t('confirm_date')}
+                    <i class="fas fa-check"></i> Confirmar fecha
                 </button>
             </div>
             <p style="font-size:0.8rem; color:var(--gray); margin-top:0.5rem;">
-                <i class="fas fa-info-circle"></i> ${I18n.t('date_info')}
+                <i class="fas fa-info-circle"></i> No podés elegir fechas anteriores a hoy
             </p>
         `;
         addBotMessage(html, true);
     }
 
     function showTimeSelection() {
-        let html = `<p>${I18n.t('ask_time')}</p><div class="options-container">`;
+        let html = '<p>⏰ ¿A qué hora vienen?</p><div class="options-container">';
         CONFIG.availableTimes.forEach(t => {
             html += `<button class="option-btn" onclick="window.selectTime('${t}')">${t}</button>`;
         });
@@ -521,14 +503,14 @@
 
     function askForTablePreference() {
         const zone = BotState.bookingData.zone;
-        let mensaje = '';
+        let mensaje = '🪑 ¿Alguna preferencia de mesa? ';
         
         if (zone.id === 'billar') {
-            mensaje = I18n.t('ask_table_billar');
+            mensaje = '🎱 ¿Qué mesa de billar preferís? (Billar 1, Billar 2, o "no")';
         } else if (zone.id === 'vip') {
-            mensaje = I18n.t('ask_table_vip');
+            mensaje = '🥇 ¿Alguna ubicación especial en el área VIP? (cerca de la barra, con vista a la tele, etc)';
         } else {
-            mensaje = I18n.t('ask_table_general');
+            mensaje += 'Podés pedir ubicación (cerca de la tele, en la barra, etc) o decir "no"';
         }
         
         addBotMessage(mensaje);
@@ -542,13 +524,13 @@
 
     function showOffersQuestion() {
         const html = `
-            <p>${I18n.t('ask_offers')}</p>
+            <p>📢 ¿Querés recibir ofertas y promociones por WhatsApp?</p>
             <div class="options-container">
                 <button class="option-btn" onclick="window.selectOffers(true)">
-                    <i class="fas fa-check-circle"></i> ${I18n.t('yes')}
+                    <i class="fas fa-check-circle"></i> Sí, quiero
                 </button>
                 <button class="option-btn" onclick="window.selectOffers(false)">
-                    <i class="fas fa-times-circle"></i> ${I18n.t('no')}
+                    <i class="fas fa-times-circle"></i> No, gracias
                 </button>
             </div>
         `;
@@ -562,7 +544,7 @@
             addBotMessage(spamCheck.message);
             
             if (spamCheck.reason === 'limite_hora' || spamCheck.reason === 'limite_dia') {
-                addBotMessage(I18n.t('spam_verify'));
+                addBotMessage('🛡️ Por favor, verificá que no sos un robot:');
                 HumanVerification.showVerification(() => {
                     setTimeout(() => showBookingSummary(), 500);
                 });
@@ -588,62 +570,62 @@
         
         const html = `
             <div class="booking-summary">
-                <h4 style="color:var(--accent);margin-bottom:1rem;">${I18n.t('summary_title')}</h4>
+                <h4 style="color:var(--accent);margin-bottom:1rem;">✅ ¡Reserva lista!</h4>
                 
-                <div class="summary-item"><i class="fas fa-user"></i> <span>${I18n.t('summary_name', d.name)}</span></div>
-                <div class="summary-item"><i class="fas fa-map-marker-alt"></i> <span>${I18n.t('summary_zone', z.name, z.minConsumption > 0 ? '(consumo $' + z.minConsumption + ')' : '')}</span></div>
-                <div class="summary-item"><i class="fas fa-users"></i> <span>${I18n.t('summary_people', d.people, d.people > 1 ? 's' : '')}</span></div>
-                <div class="summary-item"><i class="fas fa-calendar"></i> <span>${I18n.t('summary_datetime', d.date, d.time)}</span></div>
-                <div class="summary-item"><i class="fas fa-chair"></i> <span>${I18n.t('summary_table', d.table)}</span></div>
-                <div class="summary-item"><i class="fas fa-gift"></i> <span>${I18n.t('summary_offers', d.offers ? '✅ ' + I18n.t('yes') : '❌ ' + I18n.t('no'))}</span></div>
+                <div class="summary-item"><i class="fas fa-user"></i> <span><strong>${d.name}</strong></span></div>
+                <div class="summary-item"><i class="fas fa-map-marker-alt"></i> <span>${z.name} ${z.minConsumption > 0 ? '(consumo $' + z.minConsumption + ')' : ''}</span></div>
+                <div class="summary-item"><i class="fas fa-users"></i> <span>${d.people} persona${d.people > 1 ? 's' : ''}</span></div>
+                <div class="summary-item"><i class="fas fa-calendar"></i> <span>${d.date} - ${d.time}</span></div>
+                <div class="summary-item"><i class="fas fa-chair"></i> <span>${d.table}</span></div>
+                <div class="summary-item"><i class="fas fa-gift"></i> <span>Ofertas: ${d.offers ? '✅ Sí' : '❌ No'}</span></div>
                 
                 <div style="margin-top:1.5rem; border-top:1px solid rgba(255,255,255,0.1); padding-top:1.5rem;">
-                    <h4 style="color:var(--accent); margin-bottom:1rem;">${I18n.t('payment_title')}</h4>
-                    <p style="color:var(--gray); margin-bottom:0.5rem;">${I18n.t('payment_info', CONFIG.depositAmount)}</p>
+                    <h4 style="color:var(--accent); margin-bottom:1rem;">💳 Pago de señal</h4>
+                    <p style="color:var(--gray); margin-bottom:0.5rem;">Para confirmar tu reserva, podés pagar la señal de $${CONFIG.depositAmount} CUP:</p>
                     
                     <div class="payment-qr-container">
                         <img src="${qrUrl}" alt="QR Transfermóvil">
                     </div>
                     
                     <p style="font-size:0.85rem; color:var(--gray); margin-bottom:1rem;">
-                        <i class="fas fa-info-circle"></i> ${I18n.t('payment_qr_instruction')}
+                        <i class="fas fa-info-circle"></i> Abrí Transfermóvil, escaneá el QR y pagá la señal
                     </p>
                     
                     <div style="display:flex; gap:0.5rem;">
                         <button onclick="window.checkPayment()" class="option-btn" style="flex:1;">
-                            <i class="fas fa-check-circle"></i> ${I18n.t('payment_already')}
+                            <i class="fas fa-check-circle"></i> Ya pagué
                         </button>
                         <button onclick="window.payLater()" class="option-btn" style="flex:1; background:transparent;">
-                            ${I18n.t('payment_later')}
+                            Pagar después
                         </button>
                     </div>
                 </div>
                 
                 <div style="margin-top:1.5rem;">
-                    <p style="color:var(--gray);margin-bottom:1rem;">${I18n.t('summary_send_whatsapp')}</p>
+                    <p style="color:var(--gray);margin-bottom:1rem;">📲 Enviá este mensaje para confirmar:</p>
                     
                     <a href="https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(generateWhatsAppMessage())}" 
                        target="_blank" 
                        class="option-btn" 
                        style="background:#25D366;color:white;width:100%;justify-content:center;padding:1rem;text-decoration:none;display:inline-block;">
-                        <i class="fab fa-whatsapp"></i> ${I18n.t('send_whatsapp')}
+                        <i class="fab fa-whatsapp"></i> CONFIRMAR RESERVA
                     </a>
                     
                     <button onclick="window.resetConversation()" 
                             class="option-btn" 
                             style="background:transparent;color:var(--gray);border:1px solid var(--gray);width:100%;margin-top:0.5rem;cursor:pointer;">
-                        <i class="fas fa-redo"></i> ${I18n.t('new_reservation')}
+                        <i class="fas fa-redo"></i> Nueva reserva
                     </button>
                 </div>
                 
                 <div style="margin-top:1rem;font-size:0.85rem;color:var(--gray);text-align:center;">
-                    <i class="fas fa-shield-alt"></i> ${I18n.t('reservations_today', reservasHoy, AntiSpam.limits.maxReservasPorDia)}
+                    <i class="fas fa-shield-alt"></i> Reservas hoy: ${reservasHoy}/${AntiSpam.limits.maxReservasPorDia}
                 </div>
             </div>
         `;
         
         addBotMessage(html, true);
-        addBotMessage(I18n.t('thank_you'));
+        addBotMessage('🎉 ¡Gracias por elegir SportBar 23 y 12!');
     }
 
     function generateWhatsAppMessage() {
@@ -670,8 +652,7 @@
             const reservas = JSON.parse(localStorage.getItem('sportbar_reservas') || '[]');
             reservas.push({
                 ...BotState.bookingData,
-                fechaReserva: new Date().toISOString(),
-                paid: false
+                fechaReserva: new Date().toISOString()
             });
             localStorage.setItem('sportbar_reservas', JSON.stringify(reservas));
         } catch (e) {}
@@ -744,7 +725,7 @@
         BotState.bookingData.zone = zone;
         addUserMessage(zone.name);
         BotState.currentStep = 2;
-        setTimeout(() => addBotMessage(I18n.t('ask_people', zone.minPeople, zone.maxPeople)), 500);
+        setTimeout(() => addBotMessage(`👥 ¿Para cuántas personas? (mín: ${zone.minPeople}, máx: ${zone.maxPeople})`), 500);
     };
 
     window.confirmDate = function() {
@@ -752,7 +733,7 @@
         
         const input = document.getElementById('datePicker');
         if (!input || !input.value) {
-            addBotMessage(I18n.t('error_date_none'));
+            addBotMessage('❌ Por favor seleccioná una fecha.');
             return;
         }
         
@@ -785,7 +766,7 @@
     window.selectOffers = function(accept) {
         if (BotState.isWaitingResponse) return;
         BotState.bookingData.offers = accept;
-        addUserMessage(accept ? I18n.t('yes') : I18n.t('no'));
+        addUserMessage(accept ? 'Sí, quiero ofertas' : 'No, gracias');
         BotState.currentStep = 6;
         setTimeout(() => checkSpamAndShowSummary(), 500);
     };
@@ -806,7 +787,7 @@
             const verificationMsg = document.querySelector('.bot-message:last-child');
             if (verificationMsg) verificationMsg.remove();
         } else {
-            addBotMessage(I18n.t('spam_verify_wrong'));
+            addBotMessage('❌ Respuesta incorrecta. Intentá de nuevo.');
             AntiSpam.registerFailedAttempt('verificacion_fallida');
         }
     };
@@ -840,7 +821,7 @@
         };
         BotState.errorCount = 0;
         DOM.messagesArea.innerHTML = '';
-        addBotMessage(I18n.t('welcome'));
+        addBotMessage(CONFIG.welcomeMessage);
     };
 
     // ============================================
