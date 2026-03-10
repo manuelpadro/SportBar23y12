@@ -498,3 +498,123 @@ body {
         font-size: 16px !important;
     }
 }
+
+/* ===== ESTILOS CORREGIDOS Y MEJORADOS ===== */
+
+/* Resumen de reserva */
+.booking-summary {
+    background: rgba(255,255,255,0.05);
+    border-radius: var(--radius);
+    padding: 1.2rem;
+    margin: 0.5rem 0;
+}
+
+.summary-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.summary-item:last-child {
+    border-bottom: none;
+}
+
+.summary-item i {
+    color: var(--accent);
+    width: 20px;
+    text-align: center;
+}
+
+/* Mensajes de advertencia */
+.bot-message.warning .message-content {
+    border-left: 4px solid #ff6b6b;
+    background: rgba(255,107,107,0.1);
+}
+
+/* Botón deshabilitado */
+.send-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.send-btn:disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+/* Input de verificación */
+#verificationAnswer {
+    width: 100%;
+    padding: 0.8rem;
+    background: var(--dark);
+    border: 2px solid var(--accent);
+    border-radius: 8px;
+    color: white;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+#verificationAnswer:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+/* Date picker mejorado */
+.date-picker-container input[type="date"] {
+    width: 100%;
+    padding: 0.8rem;
+    border-radius: 8px;
+    border: 1px solid var(--primary);
+    background: var(--dark-card);
+    color: var(--light);
+    font-size: 1rem;
+    font-family: var(--font-body);
+}
+
+.date-picker-container input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    opacity: 0.8;
+    cursor: pointer;
+}
+
+/* Botones de opción mejorados */
+.option-btn {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid var(--accent);
+    color: var(--light);
+    padding: 0.6rem 1.2rem;
+    border-radius: 50px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.option-btn:hover {
+    background: var(--accent);
+    color: var(--dark);
+    transform: translateY(-2px);
+}
+
+.option-btn i {
+    font-size: 0.85rem;
+}
+
+/* Contenedor de opciones */
+.options-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+/* Mensaje de sistema */
+.bot-message.system .message-content {
+    background: rgba(230,57,70,0.1);
+    border-left: 4px solid var(--primary);
+}
