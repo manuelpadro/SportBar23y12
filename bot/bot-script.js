@@ -1,6 +1,6 @@
 /**
- * SPORTBAR 23 Y 12 - BOT SIMPLE
- * Versión: 5.0 - Sin idiomas, sin i18n, sin teléfono
+ * SPORTBAR 23 Y 12 - BOT CON PAGO POR TRANSFERENCIA
+ * Versión: 6.0 - Con datos bancarios y envío de comprobante
  */
 
 (function() {
@@ -10,16 +10,16 @@
     // CONFIGURACIÓN
     // ============================================
     const CONFIG = {
-        whatsappNumber: '5358873126',
-        merchantCode: 'SPORTBAR2312', // Cambiá por tu código de Transfermóvil
-        depositAmount: 500, // Señal en CUP
+        whatsappNumber: '+5358873126',
+        bankAccount: '9205959879209162', // Número de tarjeta
+        confirmNumber: '+5358873126', // Número para confirmar
         
         zones: [
-            { id: 'vip', name: '🥇 VIP', minConsumption: 3000, minPeople: 4, maxPeople: 8, emoji: '🥇' },
-            { id: 'interior', name: '🪑 Interior', minConsumption: 0, minPeople: 2, maxPeople: 6, emoji: '🪑' },
-            { id: 'exterior', name: '🌳 Exterior', minConsumption: 0, minPeople: 2, maxPeople: 8, emoji: '🌳' },
-            { id: 'barra', name: '🍻 Barra', minConsumption: 0, minPeople: 1, maxPeople: 2, emoji: '🍻' },
-            { id: 'billar', name: '🎱 Billar', minConsumption: 0, minPeople: 2, maxPeople: 4, emoji: '🎱' }
+            { id: 'vip', name: '🥇 VIP', minConsumption: 3000, minPeople: 4, maxPeople: 8, emoji: '🥇', depositAmount: 1500 },
+            { id: 'interior', name: '🪑 Interior', minConsumption: 0, minPeople: 2, maxPeople: 6, emoji: '🪑', depositAmount: 500 },
+            { id: 'exterior', name: '🌳 Exterior', minConsumption: 0, minPeople: 2, maxPeople: 8, emoji: '🌳', depositAmount: 500 },
+            { id: 'barra', name: '🍻 Barra', minConsumption: 0, minPeople: 1, maxPeople: 2, emoji: '🍻', depositAmount: 500 },
+            { id: 'billar', name: '🎱 Billar', minConsumption: 0, minPeople: 2, maxPeople: 4, emoji: '🎱', depositAmount: 500 }
         ],
         
         availableTimes: [
@@ -331,14 +331,6 @@
     };
 
     // ============================================
-    // FUNCIONES DE PAGO
-    // ============================================
-    function generateTransfermovilQR(amount, concept) {
-        const qrData = `transfermovil.etecsa.cu/pagar?c=${CONFIG.merchantCode}&m=${amount}&d=${encodeURIComponent(concept)}`;
-        return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData)}`;
-    }
-
-    // ============================================
     // FUNCIONES PRINCIPALES
     // ============================================
     function init() {
@@ -355,21 +347,35 @@
         setupEventListeners();
         focusInput();
         addBotMessage(CONFIG.welcomeMessage);
+        
+        console.log('✅ Bot inicializado correctamente');
     }
 
     function setupEventListeners() {
-        DOM.sendButton.addEventListener('click', sendMessage);
-        DOM.userInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendMessage();
-        });
-        DOM.resetButton.addEventListener('click', resetConversation);
+        if (DOM.sendButton) {
+            DOM.sendButton.addEventListener('click', sendMessage);
+        }
         
-        DOM.userInput.addEventListener('input', () => {
-            DOM.sendButton.disabled = !DOM.userInput.value.trim();
-        });
+        if (DOM.userInput) {
+            DOM.userInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendMessage();
+            });
+            
+            DOM.userInput.addEventListener('input', () => {
+                if (DOM.sendButton) {
+                    DOM.sendButton.disabled = !DOM.userInput.value.trim();
+                }
+            });
+        }
+        
+        if (DOM.resetButton) {
+            DOM.resetButton.addEventListener('click', resetConversation);
+        }
     }
 
     function sendMessage() {
+        if (!DOM.userInput) return;
+        
         const input = DOM.userInput.value.trim();
         if (!input || BotState.isWaitingResponse) return;
         
@@ -380,7 +386,7 @@
         
         addUserMessage(input);
         DOM.userInput.value = '';
-        DOM.sendButton.disabled = true;
+        if (DOM.sendButton) DOM.sendButton.disabled = true;
         
         processUserInput(input);
     }
@@ -562,11 +568,7 @@
         const d = BotState.bookingData;
         const z = d.zone;
         const reservasHoy = AntiSpam.getTodayReservations();
-        
-        const qrUrl = generateTransfermovilQR(
-            CONFIG.depositAmount, 
-            `Señal reserva ${d.name} ${d.date}`
-        );
+        const depositAmount = z.depositAmount;
         
         const html = `
             <div class="booking-summary">
@@ -581,19 +583,33 @@
                 
                 <div style="margin-top:1.5rem; border-top:1px solid rgba(255,255,255,0.1); padding-top:1.5rem;">
                     <h4 style="color:var(--accent); margin-bottom:1rem;">💳 Pago de señal</h4>
-                    <p style="color:var(--gray); margin-bottom:0.5rem;">Para confirmar tu reserva, podés pagar la señal de $${CONFIG.depositAmount} CUP:</p>
+                    <p style="color:var(--gray); margin-bottom:0.5rem;">Para confirmar tu reserva, transferí el <strong>${depositAmount} CUP</strong> a:</p>
                     
-                    <div class="payment-qr-container">
-                        <img src="${qrUrl}" alt="QR Transfermóvil">
+                    <div style="background:rgba(255,255,255,0.05); border-radius:10px; padding:1rem; margin:1rem 0;">
+                        <p style="color:var(--light); font-size:1.1rem; margin-bottom:0.5rem;">
+                            <i class="fas fa-credit-card" style="color:var(--accent);"></i> 
+                            <strong>Número de tarjeta:</strong>
+                        </p>
+                        <p style="font-family:monospace; font-size:1.2rem; background:var(--dark); padding:0.8rem; border-radius:8px; text-align:center; letter-spacing:2px;">
+                            ${CONFIG.bankAccount}
+                        </p>
+                        
+                        <p style="color:var(--light); font-size:1.1rem; margin:1rem 0 0.5rem 0;">
+                            <i class="fas fa-phone" style="color:var(--accent);"></i> 
+                            <strong>Número para confirmar:</strong>
+                        </p>
+                        <p style="font-family:monospace; font-size:1.2rem; background:var(--dark); padding:0.8rem; border-radius:8px; text-align:center;">
+                            ${CONFIG.confirmNumber}
+                        </p>
                     </div>
                     
-                    <p style="font-size:0.85rem; color:var(--gray); margin-bottom:1rem;">
-                        <i class="fas fa-info-circle"></i> Abrí Transfermóvil, escaneá el QR y pagá la señal
+                    <p style="font-size:0.9rem; color:var(--gray); margin-bottom:1rem;">
+                        <i class="fas fa-camera"></i> <strong>Importante:</strong> Enviá el <strong>screenshot del comprobante</strong> al número de confirmación
                     </p>
                     
                     <div style="display:flex; gap:0.5rem;">
-                        <button onclick="window.checkPayment()" class="option-btn" style="flex:1;">
-                            <i class="fas fa-check-circle"></i> Ya pagué
+                        <button onclick="window.confirmPayment()" class="option-btn" style="flex:1; background:var(--accent); color:var(--dark);">
+                            <i class="fas fa-check-circle"></i> Ya transferí
                         </button>
                         <button onclick="window.payLater()" class="option-btn" style="flex:1; background:transparent;">
                             Pagar después
@@ -641,7 +657,8 @@
         mensaje += `⏰ *Hora:* ${d.time}\n`;
         mensaje += `🪑 *Mesa:* ${d.table}\n\n`;
         mensaje += `📢 *Ofertas:* ${d.offers ? '✅ Sí' : '❌ No'}\n\n`;
-        mensaje += `💰 *Señal:* ${d.paid ? '✅ Pagada' : '⏳ Pendiente'}\n\n`;
+        mensaje += `💰 *Señal:* ${z.depositAmount} CUP - ${d.paid ? '✅ Pagada' : '⏳ Pendiente'}\n`;
+        mensaje += `📱 *Número a confirmar:* ${CONFIG.confirmNumber}\n\n`;
         mensaje += `✅ *Estado:* Pendiente de confirmación`;
         
         return mensaje;
@@ -662,6 +679,11 @@
     // FUNCIONES AUXILIARES
     // ============================================
     function addBotMessage(content, isHTML = false) {
+        if (!DOM.messagesArea) {
+            console.error('❌ messagesArea no encontrado');
+            return;
+        }
+        
         const div = document.createElement('div');
         div.className = 'message bot-message';
         
@@ -676,6 +698,8 @@
     }
 
     function addUserMessage(text) {
+        if (!DOM.messagesArea) return;
+        
         const div = document.createElement('div');
         div.className = 'message user-message';
         div.innerHTML = `
@@ -693,20 +717,28 @@
     }
 
     function showTypingIndicator() {
-        DOM.typingIndicator.classList.add('active');
-        scrollToBottom();
+        if (DOM.typingIndicator) {
+            DOM.typingIndicator.classList.add('active');
+            scrollToBottom();
+        }
     }
 
     function hideTypingIndicator() {
-        DOM.typingIndicator.classList.remove('active');
+        if (DOM.typingIndicator) {
+            DOM.typingIndicator.classList.remove('active');
+        }
     }
 
     function scrollToBottom() {
-        DOM.chatContainer.scrollTop = DOM.chatContainer.scrollHeight;
+        if (DOM.chatContainer) {
+            DOM.chatContainer.scrollTop = DOM.chatContainer.scrollHeight;
+        }
     }
 
     function focusInput() {
-        DOM.userInput.focus();
+        if (DOM.userInput) {
+            DOM.userInput.focus();
+        }
     }
 
     function loadSavedData() {
@@ -792,8 +824,8 @@
         }
     };
 
-    window.checkPayment = function() {
-        addBotMessage('✅ ¡Gracias por tu pago! Tu reserva está confirmada.');
+    window.confirmPayment = function() {
+        addBotMessage('✅ ¡Gracias! Enviá el screenshot del comprobante al número ' + CONFIG.confirmNumber + ' por WhatsApp para confirmar tu reserva.');
         BotState.bookingData.paid = true;
         
         const reservas = JSON.parse(localStorage.getItem('sportbar_reservas') || '[]');
@@ -820,7 +852,9 @@
             paid: false
         };
         BotState.errorCount = 0;
-        DOM.messagesArea.innerHTML = '';
+        if (DOM.messagesArea) {
+            DOM.messagesArea.innerHTML = '';
+        }
         addBotMessage(CONFIG.welcomeMessage);
     };
 
