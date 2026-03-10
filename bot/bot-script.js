@@ -1,6 +1,6 @@
 /**
- * SPORTBAR 23 Y 12 - BOT CON PREGUNTA ABIERTA DE MESA
- * Pregunta: "¿Alguna mesa en específico?" + Validación de fecha
+ * SPORTBAR 23 Y 12 - BOT COMPLETO CORREGIDO
+ * Versión: 2.1 - Con todas las correcciones
  */
 
 (function() {
@@ -13,16 +13,290 @@
         whatsappNumber: '5358873126',
         
         zones: [
-            { id: 'vip', name: '🥇 VIP', minConsumption: 3000, minPeople: 4, maxPeople: 8, keywords: ['vip', 'exclusivo', 'privado'] },
-            { id: 'interior', name: '🪑 Estándar Interior', minConsumption: 0, minPeople: 2, maxPeople: 6, keywords: ['interior', 'adentro', 'dentro'] },
-            { id: 'exterior', name: '🌳 Estándar Exterior', minConsumption: 0, minPeople: 2, maxPeople: 8, keywords: ['exterior', 'afuera', 'terraza'] },
-            { id: 'barra', name: '🍻 Barra', minConsumption: 0, minPeople: 1, maxPeople: 2, keywords: ['barra', 'bar'] },
-            { id: 'billar', name: '🎱 Billar', minConsumption: 0, minPeople: 2, maxPeople: 4, keywords: ['billar', 'pool', 'mesa de billar', 'jugar'] }
+            { id: 'vip', name: '🥇 VIP', minConsumption: 3000, minPeople: 4, maxPeople: 8, emoji: '🥇' },
+            { id: 'interior', name: '🪑 Interior', minConsumption: 0, minPeople: 2, maxPeople: 6, emoji: '🪑' },
+            { id: 'exterior', name: '🌳 Exterior', minConsumption: 0, minPeople: 2, maxPeople: 8, emoji: '🌳' },
+            { id: 'barra', name: '🍻 Barra', minConsumption: 0, minPeople: 1, maxPeople: 2, emoji: '🍻' },
+            { id: 'billar', name: '🎱 Billar', minConsumption: 0, minPeople: 2, maxPeople: 4, emoji: '🎱' }
         ],
         
-        availableTimes: ['07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'],
+        availableTimes: ['19:00', '20:00', '21:00', '22:00', '23:00'],
         
-        welcomeMessage: '🏈 ¡Hola! Soy --SportBot🏈🤖--, tu asistente de reservas.\n\n¿En qué te puedo ayudar hoy? Podés decirme primero, ¿Cómo te llamas?'
+        welcomeMessage: '🏈 ¡Hola! Soy **SportBot**, tu asistente virtual.\n\n¿Cómo te llamas?'
+    };
+
+    // ============================================
+    // SISTEMA ANTI-SPAM COMPLETO
+    // ============================================
+    const AntiSpam = {
+        attempts: {
+            totalReservas: 0,
+            ultimaReserva: null,
+            intentosPorMinuto: [],
+            bloqueadoHasta: null,
+            mensajesRapidos: []
+        },
+        
+        limits: {
+            maxReservasPorHora: 3,
+            maxReservasPorDia: 5,
+            tiempoEntreReservas: 30000,
+            maxIntentosFallidos: 5,
+            tiempoBloqueo: 900000,
+            velocidadMinima: 1000,
+            maxMensajesRapidos: 10
+        },
+        
+        init: function() {
+            try {
+                const saved = localStorage.getItem('sportbar_antispam');
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    if (data.bloqueadoHasta && new Date(data.bloqueadoHasta) < new Date()) {
+                        data.bloqueadoHasta = null;
+                        data.intentosPorMinuto = [];
+                    }
+                    this.attempts = data;
+                }
+            } catch (e) {}
+            
+            setInterval(() => this.cleanOldAttempts(), 60000);
+        },
+        
+        cleanOldAttempts: function() {
+            const ahora = Date.now();
+            this.attempts.intentosPorMinuto = this.attempts.intentosPorMinuto.filter(
+                timestamp => ahora - timestamp < 3600000
+            );
+            this.save();
+        },
+        
+        registerMessage: function() {
+            const ahora = Date.now();
+            this.attempts.mensajesRapidos.push(ahora);
+            
+            if (this.attempts.mensajesRapidos.length > 10) {
+                this.attempts.mensajesRapidos.shift();
+            }
+            
+            if (this.attempts.mensajesRapidos.length >= 3) {
+                const ultimos = this.attempts.mensajesRapidos.slice(-3);
+                const velocidad = ultimos[2] - ultimos[0];
+                
+                if (velocidad < 2000) {
+                    this.registerFailedAttempt('velocidad');
+                    return false;
+                }
+            }
+            
+            this.save();
+            return true;
+        },
+        
+        canMakeReservation: function() {
+            const ahora = Date.now();
+            
+            if (this.attempts.bloqueadoHasta) {
+                const bloqueadoHasta = new Date(this.attempts.bloqueadoHasta);
+                if (bloqueadoHasta > new Date()) {
+                    const minutosRestantes = Math.ceil((bloqueadoHasta - new Date()) / 60000);
+                    return {
+                        allowed: false,
+                        reason: 'bloqueado',
+                        message: `⛔ Demasiados intentos. Esperá ${minutosRestantes} minutos.`
+                    };
+                } else {
+                    this.attempts.bloqueadoHasta = null;
+                }
+            }
+            
+            if (this.attempts.ultimaReserva) {
+                const tiempoDesdeUltima = ahora - this.attempts.ultimaReserva;
+                if (tiempoDesdeUltima < this.limits.tiempoEntreReservas) {
+                    const segundosRestantes = Math.ceil((this.limits.tiempoEntreReservas - tiempoDesdeUltima) / 1000);
+                    return {
+                        allowed: false,
+                        reason: 'muy_seguido',
+                        message: `⏳ Esperá ${segundosRestantes} segundos entre reservas.`
+                    };
+                }
+            }
+            
+            const reservasUltimaHora = this.attempts.intentosPorMinuto.length;
+            if (reservasUltimaHora >= this.limits.maxReservasPorHora) {
+                return {
+                    allowed: false,
+                    reason: 'limite_hora',
+                    message: `⏰ Alcanzaste el límite de ${this.limits.maxReservasPorHora} reservas por hora.`
+                };
+            }
+            
+            const reservasHoy = this.getTodayReservations();
+            if (reservasHoy >= this.limits.maxReservasPorDia) {
+                return {
+                    allowed: false,
+                    reason: 'limite_dia',
+                    message: `📅 Alcanzaste el límite de ${this.limits.maxReservasPorDia} reservas por día.`
+                };
+            }
+            
+            return { allowed: true };
+        },
+        
+        registerReservation: function() {
+            const ahora = Date.now();
+            this.attempts.totalReservas++;
+            this.attempts.ultimaReserva = ahora;
+            this.attempts.intentosPorMinuto.push(ahora);
+            this.save();
+            this.saveDailyReservation();
+        },
+        
+        registerFailedAttempt: function(reason = 'general') {
+            const failedAttempts = parseInt(localStorage.getItem('sportbar_failed_attempts') || '0') + 1;
+            localStorage.setItem('sportbar_failed_attempts', failedAttempts);
+            
+            if (failedAttempts >= this.limits.maxIntentosFallidos) {
+                this.blockUser();
+            }
+        },
+        
+        blockUser: function() {
+            const bloqueoHasta = new Date(Date.now() + this.limits.tiempoBloqueo);
+            this.attempts.bloqueadoHasta = bloqueoHasta.toISOString();
+            this.save();
+            localStorage.setItem('sportbar_failed_attempts', '0');
+        },
+        
+        getTodayReservations: function() {
+            try {
+                const hoy = new Date().toDateString();
+                const reservas = JSON.parse(localStorage.getItem('sportbar_reservas_diarias') || '{}');
+                return reservas[hoy] || 0;
+            } catch (e) {
+                return 0;
+            }
+        },
+        
+        saveDailyReservation: function() {
+            try {
+                const hoy = new Date().toDateString();
+                const reservas = JSON.parse(localStorage.getItem('sportbar_reservas_diarias') || '{}');
+                reservas[hoy] = (reservas[hoy] || 0) + 1;
+                localStorage.setItem('sportbar_reservas_diarias', JSON.stringify(reservas));
+            } catch (e) {}
+        },
+        
+        save: function() {
+            try {
+                localStorage.setItem('sportbar_antispam', JSON.stringify(this.attempts));
+            } catch (e) {}
+        },
+        
+        reset: function() {
+            this.attempts = {
+                totalReservas: 0,
+                ultimaReserva: null,
+                intentosPorMinuto: [],
+                bloqueadoHasta: null,
+                mensajesRapidos: []
+            };
+            localStorage.removeItem('sportbar_antispam');
+            localStorage.removeItem('sportbar_failed_attempts');
+        }
+    };
+
+    // ============================================
+    // VERIFICACIÓN HUMANA
+    // ============================================
+    const HumanVerification = {
+        questions: [
+            { question: '¿Cuánto es 3 + 4?', answer: '7' },
+            { question: '¿Cuántas letras tiene la palabra "MESA"?', answer: '4' },
+            { question: 'Escribí el número SIETE', answer: '7' },
+            { question: '¿Cuánto es 12 - 5?', answer: '7' }
+        ],
+        
+        showVerification: function(callback) {
+            const randomIndex = Math.floor(Math.random() * this.questions.length);
+            const q = this.questions[randomIndex];
+            
+            sessionStorage.setItem('expected_answer', q.answer);
+            window.verificationCallback = callback;
+            
+            const html = `
+                <div style="background:rgba(244,162,97,0.1);border-radius:10px;padding:1rem;margin:0.5rem 0;">
+                    <p style="color:var(--accent);margin-bottom:0.5rem;">🤖 Verificación anti-spam:</p>
+                    <p style="font-size:1.2rem;margin-bottom:1rem;"><strong>${q.question}</strong></p>
+                    <input type="text" id="verificationAnswer" placeholder="Tu respuesta" 
+                           style="width:100%;padding:0.8rem;background:var(--dark);border:1px solid var(--accent);border-radius:8px;color:white;margin-bottom:0.5rem;">
+                    <button onclick="window.checkVerification()" 
+                            style="width:100%;padding:0.8rem;background:var(--accent);color:var(--dark);border:none;border-radius:8px;font-weight:600;cursor:pointer;">
+                        Verificar
+                    </button>
+                </div>
+            `;
+            
+            addBotMessage(html, true);
+        }
+    };
+
+    // ============================================
+    // VALIDADOR DE TELÉFONO CUBANO
+    // ============================================
+    const PhoneValidator = {
+        patterns: [/^5[0-9]{7}$/, /^7[0-9]{7}$/],
+        testNumbers: ['55555555', '66666666', '77777777', '88888888', '99999999', '12345678'],
+        
+        isValid: function(phone) {
+            const clean = phone.replace(/\D/g, '');
+            return this.patterns.some(pattern => pattern.test(clean));
+        },
+        
+        isTestNumber: function(phone) {
+            const clean = phone.replace(/\D/g, '');
+            return this.testNumbers.includes(clean);
+        }
+    };
+
+    // ============================================
+    // VALIDACIONES
+    // ============================================
+    const Validators = {
+        name: function(text) {
+            if (!text || text.trim().length < 2) {
+                return { valid: false, message: 'El nombre debe tener al menos 2 caracteres' };
+            }
+            if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(text)) {
+                return { valid: false, message: 'Usá solo letras (sin números ni símbolos)' };
+            }
+            return { valid: true, value: text.trim() };
+        },
+        
+        people: function(text, zone) {
+            const num = parseInt(text);
+            if (isNaN(num)) {
+                return { valid: false, message: 'Por favor, ingresá un número válido' };
+            }
+            if (num < zone.minPeople) {
+                return { valid: false, message: `Mínimo ${zone.minPeople} persona${zone.minPeople > 1 ? 's' : ''} para esta zona` };
+            }
+            if (num > zone.maxPeople) {
+                return { valid: false, message: `Máximo ${zone.maxPeople} persona${zone.maxPeople > 1 ? 's' : ''} para esta zona` };
+            }
+            return { valid: true, value: num };
+        },
+        
+        date: function(dateStr) {
+            const selectedDate = new Date(dateStr);
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            
+            if (selectedDate < today) {
+                return { valid: false, message: 'La fecha no puede ser anterior a hoy' };
+            }
+            return { valid: true, value: dateStr };
+        }
     };
 
     // ============================================
@@ -37,9 +311,11 @@
             date: '',
             time: '',
             table: 'Sin preferencia',
-            offers: null
+            offers: null,
+            phone: ''
         },
         isWaitingResponse: false,
+        errorCount: 0,
         initialized: false
     };
 
@@ -56,43 +332,14 @@
     };
 
     // ============================================
-    // PROCESADOR DE LENGUAJE BÁSICO
-    // ============================================
-    const LanguageProcessor = {
-        extractPeople: function(text) {
-            const match = text.match(/(\d+)/);
-            return match ? parseInt(match[1]) : null;
-        },
-        
-        extractZone: function(text) {
-            text = text.toLowerCase();
-            if (text.includes('vip')) return CONFIG.zones[0];
-            if (text.includes('interior') || text.includes('adentro')) return CONFIG.zones[1];
-            if (text.includes('exterior') || text.includes('afuera') || text.includes('terraza')) return CONFIG.zones[2];
-            if (text.includes('barra') || text.includes('bar')) return CONFIG.zones[3];
-            if (text.includes('billar') || text.includes('pool')) return CONFIG.zones[4];
-            return null;
-        },
-        
-        extractTime: function(text) {
-            const match = text.match(/(\d{1,2})[:.]?(\d{2})?\s*(?:hs?)?/i);
-            if (match) {
-                let hour = parseInt(match[1]);
-                if (hour >= 0 && hour <= 23) {
-                    return `${hour.toString().padStart(2, '0')}:00`;
-                }
-            }
-            return null;
-        }
-    };
-
-    // ============================================
     // FUNCIONES PRINCIPALES
     // ============================================
     function init() {
         if (BotState.initialized) return;
-        BotState.initialized = true;
         
+        AntiSpam.init();
+        
+        BotState.initialized = true;
         loadSavedData();
         setupEventListeners();
         focusInput();
@@ -105,116 +352,114 @@
             if (e.key === 'Enter') sendMessage();
         });
         DOM.resetButton.addEventListener('click', resetConversation);
+        
+        DOM.userInput.addEventListener('input', () => {
+            DOM.sendButton.disabled = !DOM.userInput.value.trim();
+        });
     }
 
     function sendMessage() {
         const input = DOM.userInput.value.trim();
         if (!input || BotState.isWaitingResponse) return;
         
+        if (!AntiSpam.registerMessage()) {
+            addBotMessage('⏱️ Estás escribiendo muy rápido. Por favor, esperá un momento.');
+            return;
+        }
+        
         addUserMessage(input);
         DOM.userInput.value = '';
+        DOM.sendButton.disabled = true;
         
+        processUserInput(input);
+    }
+
+    function processUserInput(input) {
         BotState.isWaitingResponse = true;
         showTypingIndicator();
         
         setTimeout(() => {
-            processResponse(input);
             hideTypingIndicator();
+            
+            switch (BotState.currentStep) {
+                case 0:
+                    handleNameInput(input);
+                    break;
+                case 2:
+                    handlePeopleInput(input);
+                    break;
+                case 5:
+                    handleTableInput(input);
+                    break;
+                case 'phone_verification':
+                    handlePhoneVerification(input);
+                    break;
+                default:
+                    addBotMessage('No entendí. Usá las opciones del menú.');
+                    BotState.errorCount++;
+                    
+                    if (BotState.errorCount > 2) {
+                        addBotMessage('¿Necesitás ayuda? Podés reiniciar con el botón 🔄');
+                    }
+            }
+            
             BotState.isWaitingResponse = false;
             focusInput();
+            
         }, 800);
     }
 
-    function processResponse(input) {
-        switch (BotState.currentStep) {
-            case 0: // NOMBRE
-                if (input.length >= 2) {
-                    BotState.bookingData.name = input;
-                    saveToLocalStorage('sportbar_user_name', input);
-                    addBotMessage(`Hola ${input} 👋`);
-                    BotState.currentStep = 1;
-                    showZoneSelection();
-                } else {
-                    addBotMessage('¿Cómo te llamás?');
-                }
-                break;
-                
-            case 1: // ZONA - se maneja con botones
-                break;
-                
-            case 2: // PERSONAS
-                let zone = BotState.bookingData.zone;
-                let people = parseInt(input);
-                
-                if (isNaN(people) || people < zone.minPeople || people > zone.maxPeople) {
-                    addBotMessage(`Válido: ${zone.minPeople}-${zone.maxPeople} personas`);
-                    return;
-                }
-                
-                BotState.bookingData.people = people;
-                BotState.currentStep = 3;
-                showDatePicker();
-                break;
-                
-            case 3: // FECHA - se maneja con date picker
-                // Si el usuario escribió algo, le recordamos que use el calendario
-                addBotMessage('📅 Por favor, seleccioná la fecha en el calendario.');
-                showDatePicker(); // Mostrar el calendario nuevamente
-                break;
-                
-            case 4: // HORA
-                let time = input;
-                if (!CONFIG.availableTimes.includes(time)) {
-                    addBotMessage('Elegí un horario de la lista:');
-                    showTimeSelection();
-                    return;
-                }
-                BotState.bookingData.time = time;
-                BotState.currentStep = 5;
-                askForTablePreference(); // ✅ PREGUNTA "¿ALGUNA MESA EN ESPECÍFICO?"
-                break;
-                
-            case 5: // MESA (pregunta abierta)
-                // Guardamos lo que el usuario escribió (puede ser "cerca de la barra", "mesa 33", etc.)
-                BotState.bookingData.table = input || 'Sin preferencia';
-                BotState.currentStep = 6;
-                showOffersQuestion();
-                break;
-                
-            case 6: // OFERTAS
-                BotState.bookingData.offers = input.toLowerCase().includes('sí') || input.toLowerCase().includes('si');
-                BotState.currentStep = 7;
-                showBookingSummary();
-                break;
+    function handleNameInput(input) {
+        const validation = Validators.name(input);
+        
+        if (!validation.valid) {
+            addBotMessage(validation.message + ' 😅');
+            AntiSpam.registerFailedAttempt('nombre_invalido');
+            return;
         }
+        
+        BotState.bookingData.name = validation.value;
+        BotState.errorCount = 0;
+        localStorage.setItem('sportbar_user_name', validation.value);
+        
+        addBotMessage(`¡Hola ${validation.value}! 👋`);
+        setTimeout(() => {
+            BotState.currentStep = 1;
+            showZoneSelection();
+        }, 600);
     }
 
-    // ============================================
-    // SELECCIÓN DE ZONA (BOTONES)
-    // ============================================
     function showZoneSelection() {
-        let html = '<p>📍 Elegí una zona:</p><div class="options-container">';
+        let html = '<p>📍 ¿Qué zona preferís?</p><div class="options-container">';
         CONFIG.zones.forEach(z => {
-            html += `<button class="option-btn" onclick="window.selectZone('${z.id}')">${z.name}</button>`;
+            html += `<button class="option-btn" onclick="window.selectZone('${z.id}')">${z.emoji} ${z.name}</button>`;
         });
         html += '</div>';
-        DOM.messagesArea.appendChild(createBotMessage(html));
-        scrollToBottom();
+        addBotMessage(html, true);
     }
 
-    window.selectZone = function(id) {
-        BotState.bookingData.zone = CONFIG.zones.find(z => z.id === id);
-        addUserMessage(BotState.bookingData.zone.name);
-        setTimeout(() => {
-            addBotMessage(`Elegiste ${BotState.bookingData.zone.name}`);
-            BotState.currentStep = 2;
-            addBotMessage(`👥 ¿Para cuántas personas? (${BotState.bookingData.zone.minPeople}-${BotState.bookingData.zone.maxPeople})`);
-        }, 500);
-    };
+    function handlePeopleInput(input) {
+        const zone = BotState.bookingData.zone;
+        if (!zone) {
+            BotState.currentStep = 1;
+            showZoneSelection();
+            return;
+        }
+        
+        const validation = Validators.people(input, zone);
+        
+        if (!validation.valid) {
+            addBotMessage(validation.message + ' 😅');
+            AntiSpam.registerFailedAttempt('personas_invalidas');
+            return;
+        }
+        
+        BotState.bookingData.people = validation.value;
+        BotState.errorCount = 0;
+        BotState.currentStep = 3;
+        showDatePicker();
+    }
 
-    // ============================================
-    // SELECCIÓN DE FECHA CON CALENDARIO
-    // ============================================
     function showDatePicker() {
         const today = new Date().toISOString().split('T')[0];
         const html = `
@@ -222,176 +467,231 @@
             <div class="date-picker-container">
                 <input type="date" id="datePicker" min="${today}" value="${today}">
             </div>
-            <button class="option-btn" onclick="window.confirmDate()">Confirmar fecha</button>
+            <div style="display:flex; gap:0.5rem; margin-top:1rem;">
+                <button class="option-btn" onclick="window.confirmDate()">
+                    <i class="fas fa-check"></i> Confirmar fecha
+                </button>
+            </div>
         `;
-        DOM.messagesArea.appendChild(createBotMessage(html));
-        scrollToBottom();
+        addBotMessage(html, true);
     }
 
-    window.confirmDate = function() {
-        const input = document.getElementById('datePicker');
-        if (!input || !input.value) return;
-        
-        const [y, m, d] = input.value.split('-');
-        const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-        BotState.bookingData.date = `${parseInt(d)} ${meses[parseInt(m)-1]} ${y}`;
-        
-        addUserMessage(BotState.bookingData.date);
-        setTimeout(() => {
-            BotState.currentStep = 4;
-            showTimeSelection();
-        }, 500);
-    };
-
-    // ============================================
-    // SELECCIÓN DE HORA (BOTONES)
-    // ============================================
     function showTimeSelection() {
-        let html = '<p>⏰ Elegí una hora:</p><div class="options-container">';
+        let html = '<p>⏰ ¿A qué hora vienen?</p><div class="options-container">';
         CONFIG.availableTimes.forEach(t => {
             html += `<button class="option-btn" onclick="window.selectTime('${t}')">${t}</button>`;
         });
         html += '</div>';
-        DOM.messagesArea.appendChild(createBotMessage(html));
-        scrollToBottom();
+        addBotMessage(html, true);
     }
 
-    window.selectTime = function(time) {
-        BotState.bookingData.time = time;
-        addUserMessage(time);
-        setTimeout(() => {
-            BotState.currentStep = 5;
-            askForTablePreference(); // ✅ PREGUNTA POR LA MESA
-        }, 500);
-    };
-
-    // ============================================
-    // PREGUNTA ABIERTA DE MESA (¡NUEVO!)
-    // ============================================
     function askForTablePreference() {
         const zone = BotState.bookingData.zone;
-        let message = '🪑 ¿Alguna mesa en específico? Podés pedir ubicación, número, o decir "no" si no tenés preferencia.';
+        let mensaje = '🪑 ¿Alguna preferencia de mesa? ';
         
-        if (zone && zone.id === 'billar') {
-            message = '🎱 ¿Alguna mesa de billar en específico? (Billar 1, Billar 2, o "no")';
+        if (zone.id === 'billar') {
+            mensaje = '🎱 ¿Qué mesa de billar preferís? (Billar 1, Billar 2, o "no")';
+        } else if (zone.id === 'vip') {
+            mensaje = '🥇 ¿Alguna ubicación especial en el área VIP? (cerca de la barra, con vista a la tele, etc)';
+        } else {
+            mensaje += 'Podés pedir ubicación (cerca de la tele, en la barra, etc) o decir "no"';
         }
         
-        addBotMessage(message);
-        // El usuario va a ESCRIBIR su preferencia
+        addBotMessage(mensaje);
     }
 
-    // ============================================
-    // PREGUNTA DE OFERTAS
-    // ============================================
+    function handleTableInput(input) {
+        BotState.bookingData.table = input.trim() || 'Sin preferencia';
+        BotState.currentStep = 6;
+        setTimeout(() => showOffersQuestion(), 500);
+    }
+
     function showOffersQuestion() {
         const html = `
             <p>📢 ¿Querés recibir ofertas y promociones por WhatsApp?</p>
             <div class="options-container">
-                <button class="option-btn" onclick="window.selectOffers(true)">✅ Sí</button>
-                <button class="option-btn" onclick="window.selectOffers(false)">❌ No</button>
+                <button class="option-btn" onclick="window.selectOffers(true)">
+                    <i class="fas fa-check-circle"></i> Sí, quiero
+                </button>
+                <button class="option-btn" onclick="window.selectOffers(false)">
+                    <i class="fas fa-times-circle"></i> No, gracias
+                </button>
             </div>
         `;
-        DOM.messagesArea.appendChild(createBotMessage(html));
-        scrollToBottom();
+        addBotMessage(html, true);
     }
 
-    window.selectOffers = function(accept) {
-        BotState.bookingData.offers = accept;
-        addUserMessage(accept ? 'Sí' : 'No');
-        setTimeout(() => {
-            BotState.currentStep = 7;
-            showBookingSummary();
-        }, 500);
-    };
+    function askForPhoneVerification() {
+        addBotMessage('📱 Para confirmar, necesitamos tu número de WhatsApp (8 dígitos, ej: 58873126):');
+        BotState.currentStep = 'phone_verification';
+    }
 
-    // ============================================
-    // RESUMEN DE RESERVA
-    // ============================================
+    function handlePhoneVerification(input) {
+        const cleanPhone = input.replace(/\D/g, '');
+        
+        if (!PhoneValidator.isValid(cleanPhone)) {
+            addBotMessage('❌ Número inválido. Debe tener 8 dígitos y empezar con 5 (celular)');
+            AntiSpam.registerFailedAttempt('telefono_invalido');
+            return;
+        }
+        
+        if (PhoneValidator.isTestNumber(cleanPhone)) {
+            addBotMessage('❌ Este número no es válido para reservas. Usá un número real.');
+            AntiSpam.registerFailedAttempt('telefono_prueba');
+            return;
+        }
+        
+        BotState.bookingData.phone = cleanPhone;
+        addBotMessage('✅ Número verificado. Procesando reserva...');
+        
+        setTimeout(() => checkSpamAndShowSummary(), 500);
+    }
+
+    function checkSpamAndShowSummary() {
+        const spamCheck = AntiSpam.canMakeReservation();
+        
+        if (!spamCheck.allowed) {
+            addBotMessage(spamCheck.message);
+            
+            if (spamCheck.reason === 'limite_hora' || spamCheck.reason === 'limite_dia') {
+                addBotMessage('🛡️ Por favor, verificá que no sos un robot:');
+                HumanVerification.showVerification(() => {
+                    setTimeout(() => showBookingSummary(), 500);
+                });
+            }
+            return;
+        }
+        
+        showBookingSummary();
+    }
+
     function showBookingSummary() {
+        AntiSpam.registerReservation();
+        saveBookingLocally();
+        
         const d = BotState.bookingData;
         const z = d.zone;
+        const reservasRestantes = AntiSpam.limits.maxReservasPorDia - AntiSpam.getTodayReservations();
         
         const html = `
-            <div class="message bot-message">
-                <div class="message-avatar"><i class="fas fa-robot"></i></div>
-                <div class="message-content">
-                    <p>✅ ¡Reserva lista!</p>
-                    <div class="booking-summary">
-                        <div><strong>👤 ${d.name}</strong></div>
-                        <div>📍 ${z.name} ${z.minConsumption > 0 ? '($'+z.minConsumption+')' : ''}</div>
-                        <div>👥 ${d.people} personas</div>
-                        <div>📅 ${d.date} - ${d.time}</div>
-                        <div>🪑 Preferencia: ${d.table}</div>
-                        <div>📢 Ofertas: ${d.offers ? '✅ Sí' : '❌ No'}</div>
-                    </div>
-                    <p style="margin: 10px 0;">📲 Enviá este mensaje para confirmar:</p>
-                    <a href="https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(generateMessage())}" 
-                       target="_blank" class="option-btn" style="background:#25D366;color:white;width:100%;">
-                        <i class="fab fa-whatsapp"></i> ENVIAR RESERVA
+            <div class="booking-summary">
+                <h4 style="color:var(--accent);margin-bottom:1rem;">✅ ¡Reserva lista!</h4>
+                
+                <div class="summary-item"><i class="fas fa-user"></i> <span><strong>${d.name}</strong></span></div>
+                <div class="summary-item"><i class="fas fa-map-marker-alt"></i> <span>${z.name} ${z.minConsumption > 0 ? '(consumo $' + z.minConsumption + ')' : ''}</span></div>
+                <div class="summary-item"><i class="fas fa-users"></i> <span>${d.people} persona${d.people > 1 ? 's' : ''}</span></div>
+                <div class="summary-item"><i class="fas fa-calendar"></i> <span>${d.date} - ${d.time}</span></div>
+                <div class="summary-item"><i class="fas fa-chair"></i> <span>${d.table}</span></div>
+                <div class="summary-item"><i class="fas fa-phone"></i> <span>+53 ${d.phone}</span></div>
+                <div class="summary-item"><i class="fas fa-gift"></i> <span>Ofertas: ${d.offers ? '✅ Sí' : '❌ No'}</span></div>
+                
+                <div style="margin-top:1.5rem;">
+                    <p style="color:var(--gray);margin-bottom:1rem;">📲 Enviá este mensaje para confirmar:</p>
+                    
+                    <a href="https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(generateWhatsAppMessage())}" 
+                       target="_blank" 
+                       class="option-btn" 
+                       style="background:#25D366;color:white;width:100%;justify-content:center;padding:1rem;text-decoration:none;display:inline-block;">
+                        <i class="fab fa-whatsapp"></i> CONFIRMAR RESERVA
                     </a>
+                    
+                    <button onclick="window.resetConversation()" 
+                            class="option-btn" 
+                            style="background:transparent;color:var(--gray);border:1px solid var(--gray);width:100%;margin-top:0.5rem;cursor:pointer;">
+                        <i class="fas fa-redo"></i> Nueva reserva
+                    </button>
+                </div>
+                
+                <div style="margin-top:1rem;font-size:0.85rem;color:var(--gray);text-align:center;">
+                    <i class="fas fa-shield-alt"></i> Reservas hoy: ${AntiSpam.getTodayReservations()}/${AntiSpam.limits.maxReservasPorDia}
                 </div>
             </div>
         `;
-        DOM.messagesArea.insertAdjacentHTML('beforeend', html);
-        scrollToBottom();
+        
+        addBotMessage(html, true);
+        addBotMessage('🎉 ¡Gracias por elegir SportBar 23 y 12!');
     }
 
-    function generateMessage() {
+    function generateWhatsAppMessage() {
         const d = BotState.bookingData;
         const z = d.zone;
         
-        let consumoTexto = '';
-        if (z.minConsumption > 0) {
-            consumoTexto = `💰 Consumo mínimo: $${z.minConsumption}`;
-        }
+        let mensaje = `🍻 *NUEVA RESERVA - SPORTBAR 23 Y 12*\n\n`;
+        mensaje += `👤 *Cliente:* ${d.name}\n`;
+        mensaje += `📱 *Teléfono:* +53 ${d.phone}\n`;
+        mensaje += `📍 *Zona:* ${z.name}\n`;
+        if (z.minConsumption > 0) mensaje += `💰 *Consumo mínimo:* $${z.minConsumption}\n`;
+        mensaje += `👥 *Personas:* ${d.people}\n`;
+        mensaje += `📅 *Fecha:* ${d.date}\n`;
+        mensaje += `⏰ *Hora:* ${d.time}\n`;
+        mensaje += `🪑 *Mesa:* ${d.table}\n\n`;
+        mensaje += `📢 *Ofertas:* ${d.offers ? '✅ Sí' : '❌ No'}\n\n`;
+        mensaje += `✅ *Estado:* Pendiente de confirmación`;
         
-        let zonaTexto = z.name;
-        if (z.id === 'billar') {
-            zonaTexto = '🎱 Billar';
-        }
-        
-        return `🍻 *NUEVA RESERVA - SPORTBAR 23 Y 12*
-        
-👤 *Cliente:* ${d.name}
-📍 *Zona:* ${zonaTexto}
-${consumoTexto}
-👥 *Personas:* ${d.people}
-📅 *Fecha:* ${d.date}
-⏰ *Hora:* ${d.time}
-🪑 *Preferencia de mesa:* ${d.table}
+        return mensaje;
+    }
 
-📢 *Ofertas:* ${d.offers ? '✅ Sí' : '❌ No'}
-
-✅ *Estado:* Pendiente de confirmación`;
+    function saveBookingLocally() {
+        try {
+            const reservas = JSON.parse(localStorage.getItem('sportbar_reservas') || '[]');
+            reservas.push({
+                ...BotState.bookingData,
+                fechaReserva: new Date().toISOString()
+            });
+            localStorage.setItem('sportbar_reservas', JSON.stringify(reservas));
+        } catch (e) {}
     }
 
     // ============================================
     // FUNCIONES AUXILIARES
     // ============================================
-    function createBotMessage(html) {
+    function addBotMessage(content, isHTML = false) {
         const div = document.createElement('div');
         div.className = 'message bot-message';
-        div.innerHTML = `<div class="message-avatar"><i class="fas fa-robot"></i></div><div class="message-content">${html}</div>`;
-        return div;
-    }
-
-    function addBotMessage(text) {
-        DOM.messagesArea.appendChild(createBotMessage(`<p>${text}</p>`));
+        
+        let html = '<div class="message-avatar"><i class="fas fa-robot"></i></div>';
+        html += '<div class="message-content">';
+        html += isHTML ? content : `<p>${content}</p>`;
+        html += '</div>';
+        
+        div.innerHTML = html;
+        DOM.messagesArea.appendChild(div);
         scrollToBottom();
     }
 
     function addUserMessage(text) {
         const div = document.createElement('div');
         div.className = 'message user-message';
-        div.innerHTML = `<div class="message-avatar"><i class="fas fa-user"></i></div><div class="message-content"><p>${text}</p></div>`;
+        div.innerHTML = `
+            <div class="message-avatar"><i class="fas fa-user"></i></div>
+            <div class="message-content"><p>${escapeHTML(text)}</p></div>
+        `;
         DOM.messagesArea.appendChild(div);
         scrollToBottom();
     }
 
-    function showTypingIndicator() { DOM.typingIndicator.classList.add('active'); scrollToBottom(); }
-    function hideTypingIndicator() { DOM.typingIndicator.classList.remove('active'); }
-    function scrollToBottom() { DOM.chatContainer.scrollTop = DOM.chatContainer.scrollHeight; }
-    function focusInput() { DOM.userInput.focus(); }
+    function escapeHTML(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function showTypingIndicator() {
+        DOM.typingIndicator.classList.add('active');
+        scrollToBottom();
+    }
+
+    function hideTypingIndicator() {
+        DOM.typingIndicator.classList.remove('active');
+    }
+
+    function scrollToBottom() {
+        DOM.chatContainer.scrollTop = DOM.chatContainer.scrollHeight;
+    }
+
+    function focusInput() {
+        DOM.userInput.focus();
+    }
 
     function loadSavedData() {
         try {
@@ -400,19 +700,98 @@ ${consumoTexto}
         } catch (e) {}
     }
 
-    function saveToLocalStorage(key, val) {
-        try { localStorage.setItem(key, val); } catch (e) {}
-    }
+    // ============================================
+    // FUNCIONES GLOBALES (para botones)
+    // ============================================
+    window.selectZone = function(zoneId) {
+        if (BotState.isWaitingResponse) return;
+        const zone = CONFIG.zones.find(z => z.id === zoneId);
+        BotState.bookingData.zone = zone;
+        addUserMessage(zone.name);
+        BotState.currentStep = 2;
+        setTimeout(() => addBotMessage(`👥 ¿Para cuántas personas? (mín: ${zone.minPeople}, máx: ${zone.maxPeople})`), 500);
+    };
 
-    function resetConversation() {
+    window.confirmDate = function() {
+        if (BotState.isWaitingResponse) return;
+        const input = document.getElementById('datePicker');
+        if (!input || !input.value) return;
+        
+        const [y, m, d] = input.value.split('-');
+        const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+        const fechaFormateada = `${parseInt(d)} ${meses[parseInt(m)-1]} ${y}`;
+        
+        BotState.bookingData.date = fechaFormateada;
+        addUserMessage(fechaFormateada);
+        BotState.currentStep = 4;
+        setTimeout(() => showTimeSelection(), 500);
+    };
+
+    window.selectTime = function(time) {
+        if (BotState.isWaitingResponse) return;
+        BotState.bookingData.time = time;
+        addUserMessage(time);
+        BotState.currentStep = 5;
+        setTimeout(() => {
+            const zone = BotState.bookingData.zone;
+            let mensaje = '🪑 ¿Alguna preferencia de mesa? ';
+            if (zone.id === 'billar') {
+                mensaje = '🎱 ¿Qué mesa de billar preferís? (Billar 1, Billar 2, o "no")';
+            } else if (zone.id === 'vip') {
+                mensaje = '🥇 ¿Alguna ubicación especial en el área VIP?';
+            } else {
+                mensaje += 'Podés pedir ubicación o decir "no"';
+            }
+            addBotMessage(mensaje);
+        }, 500);
+    };
+
+    window.selectOffers = function(accept) {
+        if (BotState.isWaitingResponse) return;
+        BotState.bookingData.offers = accept;
+        addUserMessage(accept ? 'Sí, quiero ofertas' : 'No, gracias');
+        BotState.currentStep = 7;
+        setTimeout(() => askForPhoneVerification(), 500);
+    };
+
+    window.checkVerification = function() {
+        const input = document.getElementById('verificationAnswer');
+        if (!input) return;
+        
+        const expected = sessionStorage.getItem('expected_answer');
+        const userAnswer = input.value.trim();
+        
+        if (userAnswer === expected) {
+            sessionStorage.removeItem('expected_answer');
+            if (window.verificationCallback) {
+                window.verificationCallback();
+                window.verificationCallback = null;
+            }
+            // Eliminar el mensaje de verificación
+            const verificationMsg = document.querySelector('.bot-message:last-child');
+            if (verificationMsg) verificationMsg.remove();
+        } else {
+            addBotMessage('❌ Respuesta incorrecta. Intentá de nuevo.');
+            AntiSpam.registerFailedAttempt('verificacion_fallida');
+        }
+    };
+
+    window.resetConversation = function() {
         BotState.currentStep = 0;
         BotState.bookingData = {
             name: localStorage.getItem('sportbar_user_name') || '',
-            zone: null, people: '', date: '', time: '', table: 'Sin preferencia', offers: null
+            zone: null,
+            people: '',
+            date: '',
+            time: '',
+            table: 'Sin preferencia',
+            offers: null,
+            phone: ''
         };
+        BotState.errorCount = 0;
         DOM.messagesArea.innerHTML = '';
         addBotMessage(CONFIG.welcomeMessage);
-    }
+    };
 
     // ============================================
     // INICIAR BOT
