@@ -1,6 +1,6 @@
 /**
- * SPORTBAR 23 Y 12 - BOT COMPLETO CORREGIDO
- * Versión: 3.0 - Con validación de fecha y anti-spam
+ * SPORTBAR 23 Y 12 - BOT COMPLETO (SIN TELÉFONO)
+ * Versión: 4.1 - Sin solicitud de número de teléfono
  */
 
 (function() {
@@ -11,6 +11,8 @@
     // ============================================
     const CONFIG = {
         whatsappNumber: '5358873126',
+        merchantCode: 'SPORTBAR2312', // Tu código de comercio Transfermóvil
+        depositAmount: 500, // Señal en CUP
         
         zones: [
             { id: 'vip', name: '🥇 VIP', minConsumption: 3000, minPeople: 4, maxPeople: 8, emoji: '🥇' },
@@ -20,14 +22,11 @@
             { id: 'billar', name: '🎱 Billar', minConsumption: 0, minPeople: 2, maxPeople: 4, emoji: '🎱' }
         ],
         
-        // Horario de 7 AM a 11 PM
         availableTimes: [
             '07:00', '08:00', '09:00', '10:00', '11:00', '12:00', 
             '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', 
             '19:00', '20:00', '21:00', '22:00', '23:00'
-        ],
-        
-        welcomeMessage: '🏈 ¡Hola! Soy **SportBot**, tu asistente virtual.\n\n¿Cómo te llamas?'
+        ]
     };
 
     // ============================================
@@ -106,7 +105,7 @@
                     return {
                         allowed: false,
                         reason: 'bloqueado',
-                        message: `⛔ Demasiados intentos. Esperá ${minutosRestantes} minutos.`
+                        message: I18n.t('spam_blocked', minutosRestantes)
                     };
                 } else {
                     this.attempts.bloqueadoHasta = null;
@@ -120,7 +119,7 @@
                     return {
                         allowed: false,
                         reason: 'muy_seguido',
-                        message: `⏳ Esperá ${segundosRestantes} segundos entre reservas.`
+                        message: I18n.t('spam_wait', segundosRestantes)
                     };
                 }
             }
@@ -130,7 +129,7 @@
                 return {
                     allowed: false,
                     reason: 'limite_hora',
-                    message: `⏰ Alcanzaste el límite de ${this.limits.maxReservasPorHora} reservas por hora.`
+                    message: I18n.t('spam_hour', this.limits.maxReservasPorHora)
                 };
             }
             
@@ -139,7 +138,7 @@
                 return {
                     allowed: false,
                     reason: 'limite_dia',
-                    message: `📅 Alcanzaste el límite de ${this.limits.maxReservasPorDia} reservas por día.`
+                    message: I18n.t('spam_day', this.limits.maxReservasPorDia)
                 };
             }
             
@@ -229,13 +228,13 @@
             
             const html = `
                 <div style="background:rgba(244,162,97,0.1);border-radius:10px;padding:1rem;margin:0.5rem 0;">
-                    <p style="color:var(--accent);margin-bottom:0.5rem;">🤖 Verificación anti-spam:</p>
+                    <p style="color:var(--accent);margin-bottom:0.5rem;">${I18n.t('spam_verify_question')}</p>
                     <p style="font-size:1.2rem;margin-bottom:1rem;"><strong>${q.question}</strong></p>
-                    <input type="text" id="verificationAnswer" placeholder="Tu respuesta" 
+                    <input type="text" id="verificationAnswer" placeholder="${I18n.t('spam_verify_placeholder')}" 
                            style="width:100%;padding:0.8rem;background:var(--dark);border:1px solid var(--accent);border-radius:8px;color:white;margin-bottom:0.5rem;">
                     <button onclick="window.checkVerification()" 
                             style="width:100%;padding:0.8rem;background:var(--accent);color:var(--dark);border:none;border-radius:8px;font-weight:600;cursor:pointer;">
-                        Verificar
+                        ${I18n.t('spam_verify_button')}
                     </button>
                 </div>
             `;
@@ -245,33 +244,15 @@
     };
 
     // ============================================
-    // VALIDADOR DE TELÉFONO CUBANO
-    // ============================================
-    const PhoneValidator = {
-        patterns: [/^5[0-9]{7}$/, /^7[0-9]{7}$/],
-        testNumbers: ['55555555', '66666666', '77777777', '88888888', '99999999', '12345678'],
-        
-        isValid: function(phone) {
-            const clean = phone.replace(/\D/g, '');
-            return this.patterns.some(pattern => pattern.test(clean));
-        },
-        
-        isTestNumber: function(phone) {
-            const clean = phone.replace(/\D/g, '');
-            return this.testNumbers.includes(clean);
-        }
-    };
-
-    // ============================================
-    // VALIDACIONES COMPLETAS
+    // VALIDACIONES
     // ============================================
     const Validators = {
         name: function(text) {
             if (!text || text.trim().length < 2) {
-                return { valid: false, message: 'El nombre debe tener al menos 2 caracteres' };
+                return { valid: false, message: I18n.t('error_name_length') };
             }
             if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(text)) {
-                return { valid: false, message: 'Usá solo letras (sin números ni símbolos)' };
+                return { valid: false, message: I18n.t('error_name_chars') };
             }
             return { valid: true, value: text.trim() };
         },
@@ -279,44 +260,36 @@
         people: function(text, zone) {
             const num = parseInt(text);
             if (isNaN(num)) {
-                return { valid: false, message: 'Por favor, ingresá un número válido' };
+                return { valid: false, message: I18n.t('error_people_nan') };
             }
             if (num < zone.minPeople) {
-                return { valid: false, message: `Mínimo ${zone.minPeople} persona${zone.minPeople > 1 ? 's' : ''} para esta zona` };
+                return { 
+                    valid: false, 
+                    message: I18n.t('error_people_min', zone.minPeople, zone.minPeople > 1 ? 's' : '')
+                };
             }
             if (num > zone.maxPeople) {
-                return { valid: false, message: `Máximo ${zone.maxPeople} persona${zone.maxPeople > 1 ? 's' : ''} para esta zona` };
+                return { 
+                    valid: false, 
+                    message: I18n.t('error_people_max', zone.maxPeople, zone.maxPeople > 1 ? 's' : '')
+                };
             }
             return { valid: true, value: num };
         },
         
-        // ✅ VALIDACIÓN DE FECHA CORREGIDA
         date: function(dateStr) {
             if (!dateStr) {
-                return { 
-                    valid: false, 
-                    message: '❌ Por favor seleccioná una fecha.' 
-                };
+                return { valid: false, message: I18n.t('error_date_none') };
             }
             
             const selectedDate = new Date(dateStr);
             const today = new Date();
             
-            // Resetear horas para comparar solo fechas
             today.setHours(0, 0, 0, 0);
             selectedDate.setHours(0, 0, 0, 0);
             
-            const hoyFormateado = today.toLocaleDateString('es-ES', { 
-                day: 'numeric', 
-                month: 'long', 
-                year: 'numeric' 
-            });
-            
             if (selectedDate < today) {
-                return { 
-                    valid: false, 
-                    message: `❌ No podés elegir una fecha anterior a hoy (${hoyFormateado}).` 
-                };
+                return { valid: false, message: I18n.t('error_date') };
             }
             
             return { valid: true, value: dateStr };
@@ -335,8 +308,7 @@
             date: '',
             time: '',
             table: 'Sin preferencia',
-            offers: null,
-            phone: ''
+            offers: null
         },
         isWaitingResponse: false,
         errorCount: 0,
@@ -352,16 +324,26 @@
         sendButton: document.getElementById('sendButton'),
         resetButton: document.getElementById('resetBot'),
         typingIndicator: document.getElementById('typingIndicator'),
-        chatContainer: document.getElementById('chatContainer')
+        chatContainer: document.getElementById('chatContainer'),
+        inputHint: document.getElementById('inputHint')
     };
+
+    // ============================================
+    // FUNCIONES DE PAGO
+    // ============================================
+    function generateTransfermovilQR(amount, concept) {
+        const qrData = `transfermovil.etecsa.cu/pagar?c=${CONFIG.merchantCode}&m=${amount}&d=${encodeURIComponent(concept)}`;
+        return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData)}`;
+    }
 
     // ============================================
     // FUNCIONES PRINCIPALES
     // ============================================
-    function init() {
+    async function init() {
         if (BotState.initialized) return;
         
-        // Limpiar mensajes duplicados si los hubiera
+        await I18n.init();
+        
         if (DOM.messagesArea) {
             DOM.messagesArea.innerHTML = '';
         }
@@ -372,7 +354,11 @@
         loadSavedData();
         setupEventListeners();
         focusInput();
-        addBotMessage(CONFIG.welcomeMessage);
+        addBotMessage(I18n.t('welcome'));
+        
+        if (DOM.inputHint) {
+            DOM.inputHint.innerHTML = `<i class="fas fa-robot"></i> ${I18n.t('input_hint')}`;
+        }
     }
 
     function setupEventListeners() {
@@ -385,6 +371,20 @@
         DOM.userInput.addEventListener('input', () => {
             DOM.sendButton.disabled = !DOM.userInput.value.trim();
         });
+        
+        document.getElementById('langEs')?.addEventListener('click', () => {
+            I18n.setLocale('es');
+        });
+        
+        document.getElementById('langEn')?.addEventListener('click', () => {
+            I18n.setLocale('en');
+        });
+        
+        window.addEventListener('languageChanged', () => {
+            if (DOM.inputHint) {
+                DOM.inputHint.innerHTML = `<i class="fas fa-robot"></i> ${I18n.t('input_hint')}`;
+            }
+        });
     }
 
     function sendMessage() {
@@ -392,7 +392,7 @@
         if (!input || BotState.isWaitingResponse) return;
         
         if (!AntiSpam.registerMessage()) {
-            addBotMessage('⏱️ Estás escribiendo muy rápido. Por favor, esperá un momento.');
+            addBotMessage(I18n.t('error_fast_typing'));
             return;
         }
         
@@ -420,15 +420,12 @@
                 case 5:
                     handleTableInput(input);
                     break;
-                case 'phone_verification':
-                    handlePhoneVerification(input);
-                    break;
                 default:
-                    addBotMessage('No entendí. Usá las opciones del menú.');
+                    addBotMessage(I18n.t('error_understanding'));
                     BotState.errorCount++;
                     
                     if (BotState.errorCount > 2) {
-                        addBotMessage('¿Necesitás ayuda? Podés reiniciar con el botón 🔄');
+                        addBotMessage(I18n.t('error_help'));
                     }
             }
             
@@ -451,7 +448,7 @@
         BotState.errorCount = 0;
         localStorage.setItem('sportbar_user_name', validation.value);
         
-        addBotMessage(`¡Hola ${validation.value}! 👋`);
+        addBotMessage(I18n.t('hello', validation.value));
         setTimeout(() => {
             BotState.currentStep = 1;
             showZoneSelection();
@@ -459,7 +456,7 @@
     }
 
     function showZoneSelection() {
-        let html = '<p>📍 ¿Qué zona preferís?</p><div class="options-container">';
+        let html = `<p>${I18n.t('ask_zone')}</p><div class="options-container">`;
         CONFIG.zones.forEach(z => {
             html += `<button class="option-btn" onclick="window.selectZone('${z.id}')">${z.emoji} ${z.name}</button>`;
         });
@@ -497,24 +494,24 @@
         const todayFormatted = `${year}-${month}-${day}`;
         
         const html = `
-            <p>📅 Seleccioná la fecha en el calendario:</p>
+            <p>${I18n.t('ask_date')}</p>
             <div class="date-picker-container">
                 <input type="date" id="datePicker" min="${todayFormatted}" value="${todayFormatted}">
             </div>
             <div style="display:flex; gap:0.5rem; margin-top:1rem;">
                 <button class="option-btn" onclick="window.confirmDate()">
-                    <i class="fas fa-check"></i> Confirmar fecha
+                    <i class="fas fa-check"></i> ${I18n.t('confirm_date')}
                 </button>
             </div>
             <p style="font-size:0.8rem; color:var(--gray); margin-top:0.5rem;">
-                <i class="fas fa-info-circle"></i> No podés elegir fechas anteriores a hoy
+                <i class="fas fa-info-circle"></i> ${I18n.t('date_info')}
             </p>
         `;
         addBotMessage(html, true);
     }
 
     function showTimeSelection() {
-        let html = '<p>⏰ ¿A qué hora vienen?</p><div class="options-container">';
+        let html = `<p>${I18n.t('ask_time')}</p><div class="options-container">`;
         CONFIG.availableTimes.forEach(t => {
             html += `<button class="option-btn" onclick="window.selectTime('${t}')">${t}</button>`;
         });
@@ -524,14 +521,14 @@
 
     function askForTablePreference() {
         const zone = BotState.bookingData.zone;
-        let mensaje = '🪑 ¿Alguna preferencia de mesa? ';
+        let mensaje = '';
         
         if (zone.id === 'billar') {
-            mensaje = '🎱 ¿Qué mesa de billar preferís? (Billar 1, Billar 2, o "no")';
+            mensaje = I18n.t('ask_table_billar');
         } else if (zone.id === 'vip') {
-            mensaje = '🥇 ¿Alguna ubicación especial en el área VIP? (cerca de la barra, con vista a la tele, etc)';
+            mensaje = I18n.t('ask_table_vip');
         } else {
-            mensaje += 'Podés pedir ubicación (cerca de la tele, en la barra, etc) o decir "no"';
+            mensaje = I18n.t('ask_table_general');
         }
         
         addBotMessage(mensaje);
@@ -545,43 +542,17 @@
 
     function showOffersQuestion() {
         const html = `
-            <p>📢 ¿Querés recibir ofertas y promociones por WhatsApp?</p>
+            <p>${I18n.t('ask_offers')}</p>
             <div class="options-container">
                 <button class="option-btn" onclick="window.selectOffers(true)">
-                    <i class="fas fa-check-circle"></i> Sí, quiero
+                    <i class="fas fa-check-circle"></i> ${I18n.t('yes')}
                 </button>
                 <button class="option-btn" onclick="window.selectOffers(false)">
-                    <i class="fas fa-times-circle"></i> No, gracias
+                    <i class="fas fa-times-circle"></i> ${I18n.t('no')}
                 </button>
             </div>
         `;
         addBotMessage(html, true);
-    }
-
-    function askForPhoneVerification() {
-        addBotMessage('📱 Para confirmar, necesitamos tu número de WhatsApp (8 dígitos, ej: 58873126):');
-        BotState.currentStep = 'phone_verification';
-    }
-
-    function handlePhoneVerification(input) {
-        const cleanPhone = input.replace(/\D/g, '');
-        
-        if (!PhoneValidator.isValid(cleanPhone)) {
-            addBotMessage('❌ Número inválido. Debe tener 8 dígitos y empezar con 5 (celular)');
-            AntiSpam.registerFailedAttempt('telefono_invalido');
-            return;
-        }
-        
-        if (PhoneValidator.isTestNumber(cleanPhone)) {
-            addBotMessage('❌ Este número no es válido para reservas. Usá un número real.');
-            AntiSpam.registerFailedAttempt('telefono_prueba');
-            return;
-        }
-        
-        BotState.bookingData.phone = cleanPhone;
-        addBotMessage('✅ Número verificado. Procesando reserva...');
-        
-        setTimeout(() => checkSpamAndShowSummary(), 500);
     }
 
     function checkSpamAndShowSummary() {
@@ -591,7 +562,7 @@
             addBotMessage(spamCheck.message);
             
             if (spamCheck.reason === 'limite_hora' || spamCheck.reason === 'limite_dia') {
-                addBotMessage('🛡️ Por favor, verificá que no sos un robot:');
+                addBotMessage(I18n.t('spam_verify'));
                 HumanVerification.showVerification(() => {
                     setTimeout(() => showBookingSummary(), 500);
                 });
@@ -608,45 +579,71 @@
         
         const d = BotState.bookingData;
         const z = d.zone;
-        const reservasRestantes = AntiSpam.limits.maxReservasPorDia - AntiSpam.getTodayReservations();
+        const reservasHoy = AntiSpam.getTodayReservations();
+        
+        const qrUrl = generateTransfermovilQR(
+            CONFIG.depositAmount, 
+            `Señal reserva ${d.name} ${d.date}`
+        );
         
         const html = `
             <div class="booking-summary">
-                <h4 style="color:var(--accent);margin-bottom:1rem;">✅ ¡Reserva lista!</h4>
+                <h4 style="color:var(--accent);margin-bottom:1rem;">${I18n.t('summary_title')}</h4>
                 
-                <div class="summary-item"><i class="fas fa-user"></i> <span><strong>${d.name}</strong></span></div>
-                <div class="summary-item"><i class="fas fa-map-marker-alt"></i> <span>${z.name} ${z.minConsumption > 0 ? '(consumo $' + z.minConsumption + ')' : ''}</span></div>
-                <div class="summary-item"><i class="fas fa-users"></i> <span>${d.people} persona${d.people > 1 ? 's' : ''}</span></div>
-                <div class="summary-item"><i class="fas fa-calendar"></i> <span>${d.date} - ${d.time}</span></div>
-                <div class="summary-item"><i class="fas fa-chair"></i> <span>${d.table}</span></div>
-                <div class="summary-item"><i class="fas fa-phone"></i> <span>+53 ${d.phone}</span></div>
-                <div class="summary-item"><i class="fas fa-gift"></i> <span>Ofertas: ${d.offers ? '✅ Sí' : '❌ No'}</span></div>
+                <div class="summary-item"><i class="fas fa-user"></i> <span>${I18n.t('summary_name', d.name)}</span></div>
+                <div class="summary-item"><i class="fas fa-map-marker-alt"></i> <span>${I18n.t('summary_zone', z.name, z.minConsumption > 0 ? '(consumo $' + z.minConsumption + ')' : '')}</span></div>
+                <div class="summary-item"><i class="fas fa-users"></i> <span>${I18n.t('summary_people', d.people, d.people > 1 ? 's' : '')}</span></div>
+                <div class="summary-item"><i class="fas fa-calendar"></i> <span>${I18n.t('summary_datetime', d.date, d.time)}</span></div>
+                <div class="summary-item"><i class="fas fa-chair"></i> <span>${I18n.t('summary_table', d.table)}</span></div>
+                <div class="summary-item"><i class="fas fa-gift"></i> <span>${I18n.t('summary_offers', d.offers ? '✅ ' + I18n.t('yes') : '❌ ' + I18n.t('no'))}</span></div>
+                
+                <div style="margin-top:1.5rem; border-top:1px solid rgba(255,255,255,0.1); padding-top:1.5rem;">
+                    <h4 style="color:var(--accent); margin-bottom:1rem;">${I18n.t('payment_title')}</h4>
+                    <p style="color:var(--gray); margin-bottom:0.5rem;">${I18n.t('payment_info', CONFIG.depositAmount)}</p>
+                    
+                    <div class="payment-qr-container">
+                        <img src="${qrUrl}" alt="QR Transfermóvil">
+                    </div>
+                    
+                    <p style="font-size:0.85rem; color:var(--gray); margin-bottom:1rem;">
+                        <i class="fas fa-info-circle"></i> ${I18n.t('payment_qr_instruction')}
+                    </p>
+                    
+                    <div style="display:flex; gap:0.5rem;">
+                        <button onclick="window.checkPayment()" class="option-btn" style="flex:1;">
+                            <i class="fas fa-check-circle"></i> ${I18n.t('payment_already')}
+                        </button>
+                        <button onclick="window.payLater()" class="option-btn" style="flex:1; background:transparent;">
+                            ${I18n.t('payment_later')}
+                        </button>
+                    </div>
+                </div>
                 
                 <div style="margin-top:1.5rem;">
-                    <p style="color:var(--gray);margin-bottom:1rem;">📲 Enviá este mensaje para confirmar:</p>
+                    <p style="color:var(--gray);margin-bottom:1rem;">${I18n.t('summary_send_whatsapp')}</p>
                     
                     <a href="https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(generateWhatsAppMessage())}" 
                        target="_blank" 
                        class="option-btn" 
                        style="background:#25D366;color:white;width:100%;justify-content:center;padding:1rem;text-decoration:none;display:inline-block;">
-                        <i class="fab fa-whatsapp"></i> CONFIRMAR RESERVA
+                        <i class="fab fa-whatsapp"></i> ${I18n.t('send_whatsapp')}
                     </a>
                     
                     <button onclick="window.resetConversation()" 
                             class="option-btn" 
                             style="background:transparent;color:var(--gray);border:1px solid var(--gray);width:100%;margin-top:0.5rem;cursor:pointer;">
-                        <i class="fas fa-redo"></i> Nueva reserva
+                        <i class="fas fa-redo"></i> ${I18n.t('new_reservation')}
                     </button>
                 </div>
                 
                 <div style="margin-top:1rem;font-size:0.85rem;color:var(--gray);text-align:center;">
-                    <i class="fas fa-shield-alt"></i> Reservas hoy: ${AntiSpam.getTodayReservations()}/${AntiSpam.limits.maxReservasPorDia}
+                    <i class="fas fa-shield-alt"></i> ${I18n.t('reservations_today', reservasHoy, AntiSpam.limits.maxReservasPorDia)}
                 </div>
             </div>
         `;
         
         addBotMessage(html, true);
-        addBotMessage('🎉 ¡Gracias por elegir SportBar 23 y 12!');
+        addBotMessage(I18n.t('thank_you'));
     }
 
     function generateWhatsAppMessage() {
@@ -655,7 +652,6 @@
         
         let mensaje = `🍻 *NUEVA RESERVA - SPORTBAR 23 Y 12*\n\n`;
         mensaje += `👤 *Cliente:* ${d.name}\n`;
-        mensaje += `📱 *Teléfono:* +53 ${d.phone}\n`;
         mensaje += `📍 *Zona:* ${z.name}\n`;
         if (z.minConsumption > 0) mensaje += `💰 *Consumo mínimo:* $${z.minConsumption}\n`;
         mensaje += `👥 *Personas:* ${d.people}\n`;
@@ -663,6 +659,7 @@
         mensaje += `⏰ *Hora:* ${d.time}\n`;
         mensaje += `🪑 *Mesa:* ${d.table}\n\n`;
         mensaje += `📢 *Ofertas:* ${d.offers ? '✅ Sí' : '❌ No'}\n\n`;
+        mensaje += `💰 *Señal:* ${d.paid ? '✅ Pagada' : '⏳ Pendiente'}\n\n`;
         mensaje += `✅ *Estado:* Pendiente de confirmación`;
         
         return mensaje;
@@ -673,7 +670,8 @@
             const reservas = JSON.parse(localStorage.getItem('sportbar_reservas') || '[]');
             reservas.push({
                 ...BotState.bookingData,
-                fechaReserva: new Date().toISOString()
+                fechaReserva: new Date().toISOString(),
+                paid: false
             });
             localStorage.setItem('sportbar_reservas', JSON.stringify(reservas));
         } catch (e) {}
@@ -738,7 +736,7 @@
     }
 
     // ============================================
-    // FUNCIONES GLOBALES (para botones)
+    // FUNCIONES GLOBALES
     // ============================================
     window.selectZone = function(zoneId) {
         if (BotState.isWaitingResponse) return;
@@ -746,7 +744,7 @@
         BotState.bookingData.zone = zone;
         addUserMessage(zone.name);
         BotState.currentStep = 2;
-        setTimeout(() => addBotMessage(`👥 ¿Para cuántas personas? (mín: ${zone.minPeople}, máx: ${zone.maxPeople})`), 500);
+        setTimeout(() => addBotMessage(I18n.t('ask_people', zone.minPeople, zone.maxPeople)), 500);
     };
 
     window.confirmDate = function() {
@@ -754,11 +752,10 @@
         
         const input = document.getElementById('datePicker');
         if (!input || !input.value) {
-            addBotMessage('❌ Por favor seleccioná una fecha.');
+            addBotMessage(I18n.t('error_date_none'));
             return;
         }
         
-        // ✅ USAR EL VALIDADOR DE FECHA
         const validation = Validators.date(input.value);
         
         if (!validation.valid) {
@@ -782,26 +779,15 @@
         BotState.bookingData.time = time;
         addUserMessage(time);
         BotState.currentStep = 5;
-        setTimeout(() => {
-            const zone = BotState.bookingData.zone;
-            let mensaje = '🪑 ¿Alguna preferencia de mesa? ';
-            if (zone.id === 'billar') {
-                mensaje = '🎱 ¿Qué mesa de billar preferís? (Billar 1, Billar 2, o "no")';
-            } else if (zone.id === 'vip') {
-                mensaje = '🥇 ¿Alguna ubicación especial en el área VIP?';
-            } else {
-                mensaje += 'Podés pedir ubicación o decir "no"';
-            }
-            addBotMessage(mensaje);
-        }, 500);
+        setTimeout(() => askForTablePreference(), 500);
     };
 
     window.selectOffers = function(accept) {
         if (BotState.isWaitingResponse) return;
         BotState.bookingData.offers = accept;
-        addUserMessage(accept ? 'Sí, quiero ofertas' : 'No, gracias');
-        BotState.currentStep = 7;
-        setTimeout(() => askForPhoneVerification(), 500);
+        addUserMessage(accept ? I18n.t('yes') : I18n.t('no'));
+        BotState.currentStep = 6;
+        setTimeout(() => checkSpamAndShowSummary(), 500);
     };
 
     window.checkVerification = function() {
@@ -817,13 +803,27 @@
                 window.verificationCallback();
                 window.verificationCallback = null;
             }
-            // Eliminar el mensaje de verificación
             const verificationMsg = document.querySelector('.bot-message:last-child');
             if (verificationMsg) verificationMsg.remove();
         } else {
-            addBotMessage('❌ Respuesta incorrecta. Intentá de nuevo.');
+            addBotMessage(I18n.t('spam_verify_wrong'));
             AntiSpam.registerFailedAttempt('verificacion_fallida');
         }
+    };
+
+    window.checkPayment = function() {
+        addBotMessage('✅ ¡Gracias por tu pago! Tu reserva está confirmada.');
+        BotState.bookingData.paid = true;
+        
+        const reservas = JSON.parse(localStorage.getItem('sportbar_reservas') || '[]');
+        if (reservas.length > 0) {
+            reservas[reservas.length - 1].paid = true;
+            localStorage.setItem('sportbar_reservas', JSON.stringify(reservas));
+        }
+    };
+
+    window.payLater = function() {
+        addBotMessage('✅ Podés pagar la señal cuando llegues al SportBar. ¡Te esperamos!');
     };
 
     window.resetConversation = function() {
@@ -836,11 +836,11 @@
             time: '',
             table: 'Sin preferencia',
             offers: null,
-            phone: ''
+            paid: false
         };
         BotState.errorCount = 0;
         DOM.messagesArea.innerHTML = '';
-        addBotMessage(CONFIG.welcomeMessage);
+        addBotMessage(I18n.t('welcome'));
     };
 
     // ============================================
