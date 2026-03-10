@@ -16,12 +16,15 @@
     
     <!-- Estilos del bot -->
     <link rel="stylesheet" href="bot-style.css">
+    
+    <!-- Meta para que funcione bien en móviles -->
+    <meta name="theme-color" content="#e63946">
 </head>
 <body>
     <div class="bot-container">
         <!-- Header -->
         <header class="bot-header">
-            <a href="../index.html" class="bot-back-btn">
+            <a href="../index.html" class="bot-back-btn" aria-label="Volver al inicio">
                 <i class="fas fa-arrow-left"></i>
             </a>
             <div class="bot-header-info">
@@ -33,7 +36,7 @@
                     <span class="bot-status">● En línea</span>
                 </div>
             </div>
-            <button class="bot-reset-btn" id="resetBot" title="Reiniciar conversación">
+            <button class="bot-reset-btn" id="resetBot" title="Reiniciar conversación" aria-label="Reiniciar conversación">
                 <i class="fas fa-redo-alt"></i>
             </button>
         </header>
@@ -41,7 +44,15 @@
         <!-- Área de chat -->
         <div class="chat-container" id="chatContainer">
             <div class="messages-area" id="messagesArea">
-                <!-- Los mensajes se insertan acá -->
+                <!-- Los mensajes se insertan acá por JavaScript -->
+                <!-- Mensaje de bienvenida inicial (respaldo por si JS tarda) -->
+                <div class="message bot-message">
+                    <div class="message-avatar"><i class="fas fa-robot"></i></div>
+                    <div class="message-content">
+                        <p>🏈 ¡Hola! Soy <strong>SportBot</strong>, tu asistente virtual.</p>
+                        <p>Cargando...</p>
+                    </div>
+                </div>
             </div>
             
             <!-- Indicador de escritura -->
@@ -56,7 +67,7 @@
         <div class="input-area">
             <div class="input-container">
                 <input type="text" id="userInput" placeholder="Escribí tu respuesta..." autocomplete="off" autofocus>
-                <button id="sendButton" class="send-btn">
+                <button id="sendButton" class="send-btn" aria-label="Enviar mensaje">
                     <i class="fas fa-paper-plane"></i>
                 </button>
             </div>
@@ -66,6 +77,7 @@
         </div>
     </div>
     
+    <!-- Script del bot -->
     <script src="bot-script.js"></script>
 </body>
 </html>
