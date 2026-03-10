@@ -1,6 +1,6 @@
 /**
  * SPORTBAR 23 Y 12 - BOT COMPLETO CORREGIDO
- * Versión: 2.1 - Con todas las correcciones
+ * Versión: 3.0 - Con validación de fecha y anti-spam
  */
 
 (function() {
@@ -20,13 +20,18 @@
             { id: 'billar', name: '🎱 Billar', minConsumption: 0, minPeople: 2, maxPeople: 4, emoji: '🎱' }
         ],
         
-        availableTimes: ['19:00', '20:00', '21:00', '22:00', '23:00'],
+        // Horario de 7 AM a 11 PM
+        availableTimes: [
+            '07:00', '08:00', '09:00', '10:00', '11:00', '12:00', 
+            '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', 
+            '19:00', '20:00', '21:00', '22:00', '23:00'
+        ],
         
         welcomeMessage: '🏈 ¡Hola! Soy **SportBot**, tu asistente virtual.\n\n¿Cómo te llamas?'
     };
 
     // ============================================
-    // SISTEMA ANTI-SPAM COMPLETO
+    // SISTEMA ANTI-SPAM
     // ============================================
     const AntiSpam = {
         attempts: {
@@ -42,9 +47,7 @@
             maxReservasPorDia: 5,
             tiempoEntreReservas: 30000,
             maxIntentosFallidos: 5,
-            tiempoBloqueo: 900000,
-            velocidadMinima: 1000,
-            maxMensajesRapidos: 10
+            tiempoBloqueo: 900000
         },
         
         init: function() {
@@ -260,7 +263,7 @@
     };
 
     // ============================================
-    // VALIDACIONES
+    // VALIDACIONES COMPLETAS
     // ============================================
     const Validators = {
         name: function(text) {
@@ -287,14 +290,35 @@
             return { valid: true, value: num };
         },
         
+        // ✅ VALIDACIÓN DE FECHA CORREGIDA
         date: function(dateStr) {
+            if (!dateStr) {
+                return { 
+                    valid: false, 
+                    message: '❌ Por favor seleccioná una fecha.' 
+                };
+            }
+            
             const selectedDate = new Date(dateStr);
             const today = new Date();
-            today.setHours(0,0,0,0);
+            
+            // Resetear horas para comparar solo fechas
+            today.setHours(0, 0, 0, 0);
+            selectedDate.setHours(0, 0, 0, 0);
+            
+            const hoyFormateado = today.toLocaleDateString('es-ES', { 
+                day: 'numeric', 
+                month: 'long', 
+                year: 'numeric' 
+            });
             
             if (selectedDate < today) {
-                return { valid: false, message: 'La fecha no puede ser anterior a hoy' };
+                return { 
+                    valid: false, 
+                    message: `❌ No podés elegir una fecha anterior a hoy (${hoyFormateado}).` 
+                };
             }
+            
             return { valid: true, value: dateStr };
         }
     };
@@ -336,6 +360,11 @@
     // ============================================
     function init() {
         if (BotState.initialized) return;
+        
+        // Limpiar mensajes duplicados si los hubiera
+        if (DOM.messagesArea) {
+            DOM.messagesArea.innerHTML = '';
+        }
         
         AntiSpam.init();
         
@@ -461,17 +490,25 @@
     }
 
     function showDatePicker() {
-        const today = new Date().toISOString().split('T')[0];
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        const todayFormatted = `${year}-${month}-${day}`;
+        
         const html = `
             <p>📅 Seleccioná la fecha en el calendario:</p>
             <div class="date-picker-container">
-                <input type="date" id="datePicker" min="${today}" value="${today}">
+                <input type="date" id="datePicker" min="${todayFormatted}" value="${todayFormatted}">
             </div>
             <div style="display:flex; gap:0.5rem; margin-top:1rem;">
                 <button class="option-btn" onclick="window.confirmDate()">
                     <i class="fas fa-check"></i> Confirmar fecha
                 </button>
             </div>
+            <p style="font-size:0.8rem; color:var(--gray); margin-top:0.5rem;">
+                <i class="fas fa-info-circle"></i> No podés elegir fechas anteriores a hoy
+            </p>
         `;
         addBotMessage(html, true);
     }
@@ -714,8 +751,21 @@
 
     window.confirmDate = function() {
         if (BotState.isWaitingResponse) return;
+        
         const input = document.getElementById('datePicker');
-        if (!input || !input.value) return;
+        if (!input || !input.value) {
+            addBotMessage('❌ Por favor seleccioná una fecha.');
+            return;
+        }
+        
+        // ✅ USAR EL VALIDADOR DE FECHA
+        const validation = Validators.date(input.value);
+        
+        if (!validation.valid) {
+            addBotMessage(validation.message + ' 😅');
+            AntiSpam.registerFailedAttempt('fecha_invalida');
+            return;
+        }
         
         const [y, m, d] = input.value.split('-');
         const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
