@@ -1,41 +1,40 @@
 /**
- * SPORTBAR 23 Y 12 - BOT VERSIÓN FINAL
- * Versión: 8.0 - Con validación de fecha/hora corregida
+ * SPORTBAR 23 Y 12 - BOT VERSIÓN FINAl
  */
 
 (function() {
     'use strict';
 
-    // ============================================
-    // CONFIGURACIÓN
-    // ============================================
-    const CONFIG = {
-        whatsappNumber: '5358873126',
-        bankAccount: '9205959879209162',
-        confirmNumber: '58873126',
-        
-        zones: [
-            { id: 'vip', name: '🥇 VIP', minConsumption: 3000, minPeople: 4, maxPeople: 8, emoji: '🥇', depositAmount: 1500 },
-            { id: 'interior', name: '🪑 Interior', minConsumption: 0, minPeople: 2, maxPeople: 6, emoji: '🪑', depositAmount: 500 },
-            { id: 'exterior', name: '🌳 Exterior', minConsumption: 0, minPeople: 2, maxPeople: 8, emoji: '🌳', depositAmount: 500 },
-            { id: 'barra', name: '🍻 Barra', minConsumption: 0, minPeople: 1, maxPeople: 2, emoji: '🍻', depositAmount: 500 },
-            { id: 'billar', name: '🎱 Billar', minConsumption: 0, minPeople: 2, maxPeople: 4, emoji: '🎱', depositAmount: 500 }
-        ],
-        
-        billarTables: [
-            { id: 'billar1', name: '🎱 Billar 1', available: true },
-            { id: 'billar2', name: '🎱 Billar 2', available: true },
-            { id: 'billar3', name: '🎱 Billar 3', available: true }
-        ],
-        
-        availableTimes: [
-            '07:00', '08:00', '09:00', '10:00', '11:00', '12:00', 
-            '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', 
-            '19:00', '20:00', '21:00', '22:00', '23:00'
-        ],
-        
-        welcomeMessage: '🏈 ¡Hola! Soy **SportBot**, tu asistente virtual.\n\n¿Cómo te llamas?'
-    };
+  // ============================================
+// CONFIGURACIÓN
+// ============================================
+const CONFIG = {
+    whatsappNumber: '5358873126',
+    bankAccount: '9205959879209162',
+    confirmNumber: '58873126',
+    
+    zones: [
+        { id: 'vip', name: '🥇 VIP', minConsumption: 3000, minPeople: 4, maxPeople: 8, emoji: '🥇', depositAmount: 1500 },
+        { id: 'interior', name: '🪑 Interior', minConsumption: 0, minPeople: 2, maxPeople: 6, emoji: '🪑', depositAmount: 500 },
+        { id: 'exterior', name: '🌳 Exterior', minConsumption: 0, minPeople: 2, maxPeople: 8, emoji: '🌳', depositAmount: 500 },
+        { id: 'barra', name: '🍻 Barra', minConsumption: 0, minPeople: 1, maxPeople: 2, emoji: '🍻', depositAmount: 500 },
+        { id: 'billar', name: '🎱 Billar', minConsumption: 0, minPeople: 2, maxPeople: 4, emoji: '🎱', depositAmount: 500 }
+    ],
+    
+    // ✅ AHORA SOLO HAY 2 MESAS DE BILLAR
+    billarTables: [
+        { id: 'billar1', name: '🎱 Billar 1', available: true },
+        { id: 'billar2', name: '🎱 Billar 2', available: true }
+    ],
+    
+    availableTimes: [
+        '07:00', '08:00', '09:00', '10:00', '11:00', '12:00', 
+        '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', 
+        '19:00', '20:00', '21:00', '22:00', '23:00'
+    ],
+    
+    welcomeMessage: '🏈 ¡Hola! Soy **SportBot**, tu asistente virtual.\n\n¿Cómo te llamas?'
+};
 
     // ============================================
     // SISTEMA ANTI-SPAM
