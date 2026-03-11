@@ -618,3 +618,45 @@ body {
     background: rgba(230,57,70,0.1);
     border-left: 4px solid var(--primary);
 }
+
+
+/* ===== ESTILOS ADICIONALES ===== */
+.booking-summary {
+    background: rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 1.2rem;
+    margin: 0.5rem 0;
+}
+
+.summary-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.summary-item i {
+    color: var(--accent);
+    width: 20px;
+    text-align: center;
+}
+
+.date-picker-container input[type="date"] {
+    width: 100%;
+    padding: 0.8rem;
+    border-radius: 8px;
+    border: 1px solid var(--primary);
+    background: var(--dark-card);
+    color: var(--light);
+    font-size: 1rem;
+}
+
+/* Mensaje de advertencia */
+.warning-message {
+    background: rgba(244,162,97,0.1);
+    border-left: 4px solid var(--accent);
+    padding: 0.8rem;
+    border-radius: 8px;
+    margin: 0.5rem 0;
+}
