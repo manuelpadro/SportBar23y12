@@ -1,6 +1,6 @@
 /**
- * SPORTBAR 23 Y 12 - BOT CON PAGO POR TRANSFERENCIA
- * Versión: 6.0 - Con datos bancarios y envío de comprobante
+ * SPORTBAR 23 Y 12 - BOT CORREGIDO
+ * Versión: 7.0 
  */
 
 (function() {
@@ -10,9 +10,9 @@
     // CONFIGURACIÓN
     // ============================================
     const CONFIG = {
-        whatsappNumber: '+5358873126',
-        bankAccount: '9205959879209162', // Número de tarjeta
-        confirmNumber: '+5358873126', // Número para confirmar
+        whatsappNumber: '5358873126',
+        bankAccount: '9205959879209162',
+        confirmNumber: '58873126',
         
         zones: [
             { id: 'vip', name: '🥇 VIP', minConsumption: 3000, minPeople: 4, maxPeople: 8, emoji: '🥇', depositAmount: 1500 },
@@ -20,6 +20,13 @@
             { id: 'exterior', name: '🌳 Exterior', minConsumption: 0, minPeople: 2, maxPeople: 8, emoji: '🌳', depositAmount: 500 },
             { id: 'barra', name: '🍻 Barra', minConsumption: 0, minPeople: 1, maxPeople: 2, emoji: '🍻', depositAmount: 500 },
             { id: 'billar', name: '🎱 Billar', minConsumption: 0, minPeople: 2, maxPeople: 4, emoji: '🎱', depositAmount: 500 }
+        ],
+        
+        // Opciones para mesa de billar
+        billarTables: [
+            { id: 'billar1', name: '🎱 Billar 1', available: true },
+            { id: 'billar2', name: '🎱 Billar 2', available: true },
+            { id: 'billar3', name: '🎱 Billar 3', available: true }
         ],
         
         availableTimes: [
@@ -211,7 +218,7 @@
     };
 
     // ============================================
-    // VALIDACIONES
+    // VALIDACIONES CORREGIDAS
     // ============================================
     const Validators = {
         name: function(text) {
@@ -256,10 +263,74 @@
             selectedDate.setHours(0, 0, 0, 0);
             
             if (selectedDate < today) {
-                return { valid: false, message: '❌ No podés elegir una fecha anterior a hoy.' };
+                return { 
+                    valid: false, 
+                    message: '❌ No podés elegir una fecha anterior a hoy.' 
+                };
             }
             
             return { valid: true, value: dateStr };
+        },
+        
+        // Validar hora según fecha seleccionada
+        time: function(timeStr, dateStr) {
+            if (!timeStr) {
+                return { valid: false, message: '❌ Por favor seleccioná una hora.' };
+            }
+            
+            // Si la fecha no es hoy, cualquier hora es válida
+            const [day, month, year] = dateStr.split(' ');
+            const meses = {
+                'ene': 0, 'feb': 1, 'mar': 2, 'abr': 3, 'may': 4, 'jun': 5,
+                'jul': 6, 'ago': 7, 'sep': 8, 'oct': 9, 'nov': 10, 'dic': 11
+            };
+            
+            const fechaReserva = new Date(parseInt('20' + year), meses[month], parseInt(day));
+            const hoy = new Date();
+            
+            // Si no es hoy, es válido
+            if (fechaReserva.toDateString() !== hoy.toDateString()) {
+                return { valid: true, value: timeStr };
+            }
+            
+            // Es hoy, validar hora
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            const horaActual = hoy.getHours();
+            const minutosActuales = hoy.getMinutes();
+            
+            const minutosSeleccionados = hours * 60 + minutes;
+            const minutosAhora = horaActual * 60 + minutosActuales;
+            
+            // Si la hora ya pasó
+            if (minutosSeleccionados < minutosAhora) {
+                return {
+                    valid: false,
+                    message: `❌ Ya pasaron las ${timeStr}. Elegí una hora posterior.`
+                };
+            }
+            
+            // Si falta menos de 1 hora
+            if (minutosSeleccionados - minutosAhora < 60) {
+                return {
+                    valid: true,
+                    warning: true,
+                    message: `⚠️ Son las ${horaActual}:${minutosActuales.toString().padStart(2,'0')}. ¿Seguro querés reservar para hoy a las ${timeStr}? Tenés que llegar en menos de 1 hora.`
+                };
+            }
+            
+            return { valid: true, value: timeStr };
+        },
+        
+        // Validar mesa de billar
+        billarTable: function(tableId) {
+            const table = CONFIG.billarTables.find(t => t.id === tableId);
+            if (!table) {
+                return { valid: false, message: '❌ Mesa no válida. Elegí una de las opciones.' };
+            }
+            if (!table.available) {
+                return { valid: false, message: '❌ Esa mesa ya está reservada. Elegí otra.' };
+            }
+            return { valid: true, value: table.name };
         }
     };
 
@@ -315,7 +386,8 @@
         },
         isWaitingResponse: false,
         errorCount: 0,
-        initialized: false
+        initialized: false,
+        tempDate: null
     };
 
     // ============================================
@@ -408,6 +480,9 @@
                 case 5:
                     handleTableInput(input);
                     break;
+                case 'billar_selection':
+                    handleBillarSelection(input);
+                    break;
                 default:
                     addBotMessage('No entendí. Usá las opciones del menú.');
                     BotState.errorCount++;
@@ -429,6 +504,7 @@
         if (!validation.valid) {
             addBotMessage(validation.message + ' 😅');
             AntiSpam.registerFailedAttempt('nombre_invalido');
+            BotState.errorCount++;
             return;
         }
         
@@ -465,6 +541,7 @@
         if (!validation.valid) {
             addBotMessage(validation.message + ' 😅');
             AntiSpam.registerFailedAttempt('personas_invalidas');
+            BotState.errorCount++;
             return;
         }
         
@@ -509,11 +586,18 @@
 
     function askForTablePreference() {
         const zone = BotState.bookingData.zone;
+        
+        // Si es billar, vamos al ciclo específico
+        if (zone.id === 'billar') {
+            BotState.currentStep = 'billar_selection';
+            showBillarOptions();
+            return;
+        }
+        
+        // Para otras zonas, pregunta abierta
         let mensaje = '🪑 ¿Alguna preferencia de mesa? ';
         
-        if (zone.id === 'billar') {
-            mensaje = '🎱 ¿Qué mesa de billar preferís? (Billar 1, Billar 2, o "no")';
-        } else if (zone.id === 'vip') {
+        if (zone.id === 'vip') {
             mensaje = '🥇 ¿Alguna ubicación especial en el área VIP? (cerca de la barra, con vista a la tele, etc)';
         } else {
             mensaje += 'Podés pedir ubicación (cerca de la tele, en la barra, etc) o decir "no"';
@@ -522,8 +606,45 @@
         addBotMessage(mensaje);
     }
 
+    // ============================================
+    // CICLO DE SELECCIÓN DE MESA DE BILLAR
+    // ============================================
+    function showBillarOptions() {
+        let html = '<p>🎱 ¿Qué mesa de billar preferís?</p><div class="options-container">';
+        
+        CONFIG.billarTables.forEach(table => {
+            if (table.available) {
+                html += `<button class="option-btn" onclick="window.selectBillarTable('${table.id}')">${table.name}</button>`;
+            }
+        });
+        
+        html += '</div>';
+        html += '<p style="font-size:0.8rem; color:var(--gray); margin-top:0.5rem;">Elegí una mesa disponible</p>';
+        
+        addBotMessage(html, true);
+    }
+
+    function handleBillarSelection(input) {
+        // Buscar si el input coincide con alguna mesa
+        const tableId = `billar${input.match(/\d+/)?.[0] || ''}`;
+        const validation = Validators.billarTable(tableId);
+        
+        if (!validation.valid) {
+            addBotMessage(validation.message + ' 😅');
+            // Volver a mostrar opciones
+            setTimeout(() => showBillarOptions(), 500);
+            return;
+        }
+        
+        BotState.bookingData.table = validation.value;
+        BotState.errorCount = 0;
+        BotState.currentStep = 6;
+        setTimeout(() => showOffersQuestion(), 500);
+    }
+
     function handleTableInput(input) {
         BotState.bookingData.table = input.trim() || 'Sin preferencia';
+        BotState.errorCount = 0;
         BotState.currentStep = 6;
         setTimeout(() => showOffersQuestion(), 500);
     }
@@ -539,6 +660,9 @@
                     <i class="fas fa-times-circle"></i> No, gracias
                 </button>
             </div>
+            <p style="font-size:0.8rem; color:var(--gray); margin-top:0.5rem;">
+                <i class="fas fa-info-circle"></i> Podés cambiar esta opción después
+            </p>
         `;
         addBotMessage(html, true);
     }
@@ -774,32 +898,77 @@
         if (!validation.valid) {
             addBotMessage(validation.message + ' 😅');
             AntiSpam.registerFailedAttempt('fecha_invalida');
+            BotState.errorCount++;
             return;
         }
         
+        // Guardar fecha temporal
+        BotState.tempDate = input.value;
+        
+        // Formatear fecha
         const [y, m, d] = input.value.split('-');
         const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
         const fechaFormateada = `${parseInt(d)} ${meses[parseInt(m)-1]} ${y}`;
         
         BotState.bookingData.date = fechaFormateada;
         addUserMessage(fechaFormateada);
+        BotState.errorCount = 0;
         BotState.currentStep = 4;
         setTimeout(() => showTimeSelection(), 500);
     };
 
     window.selectTime = function(time) {
         if (BotState.isWaitingResponse) return;
+        
+        // Validar hora según fecha
+        const validation = Validators.time(time, BotState.bookingData.date);
+        
+        if (!validation.valid) {
+            addBotMessage(validation.message + ' 😅');
+            return;
+        }
+        
+        // Si hay advertencia (menos de 1 hora), preguntar
+        if (validation.warning) {
+            const confirmar = confirm(validation.message);
+            if (!confirmar) {
+                return; // No confirma, vuelve a seleccionar hora
+            }
+        }
+        
         BotState.bookingData.time = time;
         addUserMessage(time);
+        BotState.errorCount = 0;
         BotState.currentStep = 5;
         setTimeout(() => askForTablePreference(), 500);
     };
 
+    window.selectBillarTable = function(tableId) {
+        if (BotState.isWaitingResponse) return;
+        
+        const table = CONFIG.billarTables.find(t => t.id === tableId);
+        if (!table) return;
+        
+        addUserMessage(table.name);
+        BotState.bookingData.table = table.name;
+        BotState.errorCount = 0;
+        BotState.currentStep = 6;
+        setTimeout(() => showOffersQuestion(), 500);
+    };
+
     window.selectOffers = function(accept) {
         if (BotState.isWaitingResponse) return;
+        
         BotState.bookingData.offers = accept;
-        addUserMessage(accept ? 'Sí, quiero ofertas' : 'No, gracias');
-        BotState.currentStep = 6;
+        
+        if (accept) {
+            addUserMessage('✅ Sí, quiero ofertas');
+        } else {
+            addUserMessage('❌ No, gracias');
+        }
+        
+        BotState.errorCount = 0;
+        BotState.currentStep = 7;
         setTimeout(() => checkSpamAndShowSummary(), 500);
     };
 
@@ -821,6 +990,7 @@
         } else {
             addBotMessage('❌ Respuesta incorrecta. Intentá de nuevo.');
             AntiSpam.registerFailedAttempt('verificacion_fallida');
+            BotState.errorCount++;
         }
     };
 
