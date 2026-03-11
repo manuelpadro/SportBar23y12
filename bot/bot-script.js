@@ -1,6 +1,6 @@
 /**
- * SPORTBAR 23 Y 12 - BOT CORREGIDO
- * Versión: 7.0 
+ * SPORTBAR 23 Y 12 - BOT VERSIÓN FINAL
+ * Versión: 8.0 - Con validación de fecha/hora corregida
  */
 
 (function() {
@@ -22,7 +22,6 @@
             { id: 'billar', name: '🎱 Billar', minConsumption: 0, minPeople: 2, maxPeople: 4, emoji: '🎱', depositAmount: 500 }
         ],
         
-        // Opciones para mesa de billar
         billarTables: [
             { id: 'billar1', name: '🎱 Billar 1', available: true },
             { id: 'billar2', name: '🎱 Billar 2', available: true },
@@ -256,10 +255,14 @@
                 return { valid: false, message: '❌ Por favor seleccioná una fecha.' };
             }
             
-            const selectedDate = new Date(dateStr);
-            const today = new Date();
+            // Crear fecha seleccionada (forzar mediodía para evitar problemas de zona horaria)
+            const selectedDate = new Date(dateStr + 'T12:00:00');
             
+            // Crear fecha de hoy
+            const today = new Date();
             today.setHours(0, 0, 0, 0);
+            
+            // Resetear la fecha seleccionada
             selectedDate.setHours(0, 0, 0, 0);
             
             if (selectedDate < today) {
@@ -272,56 +275,77 @@
             return { valid: true, value: dateStr };
         },
         
-        // Validar hora según fecha seleccionada
         time: function(timeStr, dateStr) {
             if (!timeStr) {
                 return { valid: false, message: '❌ Por favor seleccioná una hora.' };
             }
             
-            // Si la fecha no es hoy, cualquier hora es válida
-            const [day, month, year] = dateStr.split(' ');
+            // Si no hay fecha, asumimos válido
+            if (!dateStr) {
+                return { valid: true, value: timeStr };
+            }
+            
+            // Parsear la fecha (ej: "11 mar 2026")
+            const partes = dateStr.split(' ');
+            if (partes.length < 3) {
+                return { valid: true, value: timeStr };
+            }
+            
+            const dia = parseInt(partes[0]);
+            const mesTexto = partes[1];
+            const anio = parseInt(partes[2]);
+            
             const meses = {
                 'ene': 0, 'feb': 1, 'mar': 2, 'abr': 3, 'may': 4, 'jun': 5,
                 'jul': 6, 'ago': 7, 'sep': 8, 'oct': 9, 'nov': 10, 'dic': 11
             };
             
-            const fechaReserva = new Date(parseInt('20' + year), meses[month], parseInt(day));
-            const hoy = new Date();
-            
-            // Si no es hoy, es válido
-            if (fechaReserva.toDateString() !== hoy.toDateString()) {
+            const mes = meses[mesTexto];
+            if (mes === undefined) {
                 return { valid: true, value: timeStr };
             }
             
-            // Es hoy, validar hora
+            // Crear fecha de reserva
+            const fechaReserva = new Date(anio, mes, dia);
             const [hours, minutes] = timeStr.split(':').map(Number);
-            const horaActual = hoy.getHours();
-            const minutosActuales = hoy.getMinutes();
             
-            const minutosSeleccionados = hours * 60 + minutes;
-            const minutosAhora = horaActual * 60 + minutosActuales;
+            // Crear fecha de hoy
+            const hoy = new Date();
             
-            // Si la hora ya pasó
-            if (minutosSeleccionados < minutosAhora) {
-                return {
-                    valid: false,
-                    message: `❌ Ya pasaron las ${timeStr}. Elegí una hora posterior.`
-                };
+            // Si la fecha de reserva es mayor a hoy, cualquier hora es válida
+            if (fechaReserva > hoy) {
+                return { valid: true, value: timeStr };
             }
             
-            // Si falta menos de 1 hora
-            if (minutosSeleccionados - minutosAhora < 60) {
-                return {
-                    valid: true,
-                    warning: true,
-                    message: `⚠️ Son las ${horaActual}:${minutosActuales.toString().padStart(2,'0')}. ¿Seguro querés reservar para hoy a las ${timeStr}? Tenés que llegar en menos de 1 hora.`
-                };
+            // Si es el mismo día, validar hora
+            if (fechaReserva.toDateString() === hoy.toDateString()) {
+                const horaActual = hoy.getHours();
+                const minutosActuales = hoy.getMinutes();
+                
+                const minutosSeleccionados = hours * 60 + minutes;
+                const minutosAhora = horaActual * 60 + minutosActuales;
+                
+                // Si la hora ya pasó (o es la misma hora)
+                if (minutosSeleccionados <= minutosAhora) {
+                    return {
+                        valid: false,
+                        message: `❌ Ya pasaron las ${timeStr}. Elegí una hora posterior.`
+                    };
+                }
+                
+                // Si falta menos de 1 hora, solo advertir
+                if (minutosSeleccionados - minutosAhora < 60) {
+                    return {
+                        valid: true,
+                        warning: true,
+                        message: `⚠️ Son las ${horaActual}:${minutosActuales.toString().padStart(2,'0')}. Te quedan ${minutosSeleccionados - minutosAhora} minutos para llegar. ¿Confirmás?`
+                    };
+                }
             }
             
             return { valid: true, value: timeStr };
         },
         
-        // Validar mesa de billar
         billarTable: function(tableId) {
             const table = CONFIG.billarTables.find(t => t.id === tableId);
             if (!table) {
@@ -386,8 +410,7 @@
         },
         isWaitingResponse: false,
         errorCount: 0,
-        initialized: false,
-        tempDate: null
+        initialized: false
     };
 
     // ============================================
@@ -408,10 +431,12 @@
     function init() {
         if (BotState.initialized) return;
         
-        if (DOM.messagesArea) {
-            DOM.messagesArea.innerHTML = '';
+        if (!DOM.messagesArea) {
+            console.error('❌ ERROR CRÍTICO: No se encontró el elemento messagesArea');
+            return;
         }
         
+        DOM.messagesArea.innerHTML = '';
         AntiSpam.init();
         
         BotState.initialized = true;
@@ -421,6 +446,7 @@
         addBotMessage(CONFIG.welcomeMessage);
         
         console.log('✅ Bot inicializado correctamente');
+        console.log('📅 Fecha actual:', new Date().toLocaleString());
     }
 
     function setupEventListeners() {
@@ -558,10 +584,24 @@
         const day = String(today.getDate()).padStart(2, '0');
         const todayFormatted = `${year}-${month}-${day}`;
         
+        // Fecha máxima: 3 meses después
+        const maxDate = new Date();
+        maxDate.setMonth(maxDate.getMonth() + 3);
+        const maxYear = maxDate.getFullYear();
+        const maxMonth = String(maxDate.getMonth() + 1).padStart(2, '0');
+        const maxDay = String(maxDate.getDate()).padStart(2, '0');
+        const maxFormatted = `${maxYear}-${maxMonth}-${maxDay}`;
+        
+        const fechaActual = today.toLocaleDateString('es-ES', { 
+            day: 'numeric', 
+            month: 'long', 
+            year: 'numeric' 
+        });
+        
         const html = `
             <p>📅 Seleccioná la fecha en el calendario:</p>
             <div class="date-picker-container">
-                <input type="date" id="datePicker" min="${todayFormatted}" value="${todayFormatted}">
+                <input type="date" id="datePicker" min="${todayFormatted}" max="${maxFormatted}" value="${todayFormatted}">
             </div>
             <div style="display:flex; gap:0.5rem; margin-top:1rem;">
                 <button class="option-btn" onclick="window.confirmDate()">
@@ -569,7 +609,7 @@
                 </button>
             </div>
             <p style="font-size:0.8rem; color:var(--gray); margin-top:0.5rem;">
-                <i class="fas fa-info-circle"></i> No podés elegir fechas anteriores a hoy
+                <i class="fas fa-info-circle"></i> Hoy es ${fechaActual}
             </p>
         `;
         addBotMessage(html, true);
@@ -587,14 +627,12 @@
     function askForTablePreference() {
         const zone = BotState.bookingData.zone;
         
-        // Si es billar, vamos al ciclo específico
         if (zone.id === 'billar') {
             BotState.currentStep = 'billar_selection';
             showBillarOptions();
             return;
         }
         
-        // Para otras zonas, pregunta abierta
         let mensaje = '🪑 ¿Alguna preferencia de mesa? ';
         
         if (zone.id === 'vip') {
@@ -606,9 +644,6 @@
         addBotMessage(mensaje);
     }
 
-    // ============================================
-    // CICLO DE SELECCIÓN DE MESA DE BILLAR
-    // ============================================
     function showBillarOptions() {
         let html = '<p>🎱 ¿Qué mesa de billar preferís?</p><div class="options-container">';
         
@@ -625,13 +660,11 @@
     }
 
     function handleBillarSelection(input) {
-        // Buscar si el input coincide con alguna mesa
         const tableId = `billar${input.match(/\d+/)?.[0] || ''}`;
         const validation = Validators.billarTable(tableId);
         
         if (!validation.valid) {
             addBotMessage(validation.message + ' 😅');
-            // Volver a mostrar opciones
             setTimeout(() => showBillarOptions(), 500);
             return;
         }
@@ -660,9 +693,6 @@
                     <i class="fas fa-times-circle"></i> No, gracias
                 </button>
             </div>
-            <p style="font-size:0.8rem; color:var(--gray); margin-top:0.5rem;">
-                <i class="fas fa-info-circle"></i> Podés cambiar esta opción después
-            </p>
         `;
         addBotMessage(html, true);
     }
@@ -707,7 +737,7 @@
                 
                 <div style="margin-top:1.5rem; border-top:1px solid rgba(255,255,255,0.1); padding-top:1.5rem;">
                     <h4 style="color:var(--accent); margin-bottom:1rem;">💳 Pago de señal</h4>
-                    <p style="color:var(--gray); margin-bottom:0.5rem;">Para confirmar tu reserva, transferí el <strong>${depositAmount} CUP</strong> a:</p>
+                    <p style="color:var(--gray); margin-bottom:0.5rem;">Para confirmar tu reserva, transferí <strong>${depositAmount} CUP</strong> a:</p>
                     
                     <div style="background:rgba(255,255,255,0.05); border-radius:10px; padding:1rem; margin:1rem 0;">
                         <p style="color:var(--light); font-size:1.1rem; margin-bottom:0.5rem;">
@@ -728,7 +758,7 @@
                     </div>
                     
                     <p style="font-size:0.9rem; color:var(--gray); margin-bottom:1rem;">
-                        <i class="fas fa-camera"></i> <strong>Importante:</strong> Enviá el <strong>screenshot del comprobante</strong> al número de confirmación
+                        <i class="fas fa-camera"></i> <strong>Importante:</strong> Enviá el <strong>screenshot del comprobante</strong> al ${CONFIG.confirmNumber}
                     </p>
                     
                     <div style="display:flex; gap:0.5rem;">
@@ -782,7 +812,7 @@
         mensaje += `🪑 *Mesa:* ${d.table}\n\n`;
         mensaje += `📢 *Ofertas:* ${d.offers ? '✅ Sí' : '❌ No'}\n\n`;
         mensaje += `💰 *Señal:* ${z.depositAmount} CUP - ${d.paid ? '✅ Pagada' : '⏳ Pendiente'}\n`;
-        mensaje += `📱 *Número a confirmar:* ${CONFIG.confirmNumber}\n\n`;
+        mensaje += `📱 *Confirmar al:* ${CONFIG.confirmNumber}\n\n`;
         mensaje += `✅ *Estado:* Pendiente de confirmación`;
         
         return mensaje;
@@ -803,10 +833,7 @@
     // FUNCIONES AUXILIARES
     // ============================================
     function addBotMessage(content, isHTML = false) {
-        if (!DOM.messagesArea) {
-            console.error('❌ messagesArea no encontrado');
-            return;
-        }
+        if (!DOM.messagesArea) return;
         
         const div = document.createElement('div');
         div.className = 'message bot-message';
@@ -902,10 +929,6 @@
             return;
         }
         
-        // Guardar fecha temporal
-        BotState.tempDate = input.value;
-        
-        // Formatear fecha
         const [y, m, d] = input.value.split('-');
         const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
         const fechaFormateada = `${parseInt(d)} ${meses[parseInt(m)-1]} ${y}`;
@@ -920,19 +943,17 @@
     window.selectTime = function(time) {
         if (BotState.isWaitingResponse) return;
         
-        // Validar hora según fecha
         const validation = Validators.time(time, BotState.bookingData.date);
         
         if (!validation.valid) {
-            addBotMessage(validation.message + ' 😅');
+            addBotMessage(validation.message);
             return;
         }
         
-        // Si hay advertencia (menos de 1 hora), preguntar
         if (validation.warning) {
             const confirmar = confirm(validation.message);
             if (!confirmar) {
-                return; // No confirma, vuelve a seleccionar hora
+                return;
             }
         }
         
@@ -960,13 +981,7 @@
         if (BotState.isWaitingResponse) return;
         
         BotState.bookingData.offers = accept;
-        
-        if (accept) {
-            addUserMessage('✅ Sí, quiero ofertas');
-        } else {
-            addUserMessage('❌ No, gracias');
-        }
-        
+        addUserMessage(accept ? '✅ Sí, quiero ofertas' : '❌ No, gracias');
         BotState.errorCount = 0;
         BotState.currentStep = 7;
         setTimeout(() => checkSpamAndShowSummary(), 500);
@@ -995,7 +1010,7 @@
     };
 
     window.confirmPayment = function() {
-        addBotMessage('✅ ¡Gracias! Enviá el screenshot del comprobante al número ' + CONFIG.confirmNumber + ' por WhatsApp para confirmar tu reserva.');
+        addBotMessage('✅ ¡Gracias! Enviá el screenshot del comprobante al ' + CONFIG.confirmNumber + ' por WhatsApp.');
         BotState.bookingData.paid = true;
         
         const reservas = JSON.parse(localStorage.getItem('sportbar_reservas') || '[]');
