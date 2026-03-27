@@ -660,3 +660,20 @@ body {
     border-radius: 8px;
     margin: 0.5rem 0;
 }
+
+/* Botón de comenzar reserva - estilo destacado */
+.start-reservation-btn {
+    animation: pulse-glow 2s infinite;
+}
+
+@keyframes pulse-glow {
+    0% {
+        box-shadow: 0 0 0 0 rgba(230, 57, 70, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 12px rgba(230, 57, 70, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(230, 57, 70, 0);
+    }
+}
