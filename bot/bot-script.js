@@ -1,40 +1,40 @@
 /**
- * SPORTBAR 23 Y 12 - BOT VERSIÓN FINAl
+ * SPORTBAR 23 Y 12 - BOT VERSIÓN FINAL (con botón Comenzar Reserva)
  */
 
 (function() {
     'use strict';
 
-  // ============================================
-// CONFIGURACIÓN
-// ============================================
-const CONFIG = {
-    whatsappNumber: '5358873126',
-    bankAccount: '9205959879209162',
-    confirmNumber: '58873126',
-    
-    zones: [
-        { id: 'vip', name: '🥇 VIP', minConsumption: 3000, minPeople: 4, maxPeople: 8, emoji: '🥇', depositAmount: 1500 },
-        { id: 'interior', name: '🪑 Interior', minConsumption: 0, minPeople: 2, maxPeople: 6, emoji: '🪑', depositAmount: 500 },
-        { id: 'exterior', name: '🌳 Exterior', minConsumption: 0, minPeople: 2, maxPeople: 8, emoji: '🌳', depositAmount: 500 },
-        { id: 'barra', name: '🍻 Barra', minConsumption: 0, minPeople: 1, maxPeople: 2, emoji: '🍻', depositAmount: 500 },
-        { id: 'billar', name: '🎱 Billar', minConsumption: 0, minPeople: 2, maxPeople: 4, emoji: '🎱', depositAmount: 500 }
-    ],
-    
-    // ✅ AHORA SOLO HAY 2 MESAS DE BILLAR
-    billarTables: [
-        { id: 'billar1', name: '🎱 Billar 1', available: true },
-        { id: 'billar2', name: '🎱 Billar 2', available: true }
-    ],
-    
-    availableTimes: [
-        '07:00', '08:00', '09:00', '10:00', '11:00', '12:00', 
-        '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', 
-        '19:00', '20:00', '21:00', '22:00', '23:00'
-    ],
-    
-    welcomeMessage: '🏈 ¡Hola! Soy **SportBot**, tu asistente virtual.\n\n¿Cómo te llamas?'
-};
+    // ============================================
+    // CONFIGURACIÓN
+    // ============================================
+    const CONFIG = {
+        whatsappNumber: '5358873126',
+        bankAccount: '9205959879209162',
+        confirmNumber: '58873126',
+        
+        zones: [
+            { id: 'vip', name: '🥇 VIP', minConsumption: 3000, minPeople: 4, maxPeople: 8, emoji: '🥇', depositAmount: 1500 },
+            { id: 'interior', name: '🪑 Interior', minConsumption: 0, minPeople: 2, maxPeople: 6, emoji: '🪑', depositAmount: 500 },
+            { id: 'exterior', name: '🌳 Exterior', minConsumption: 0, minPeople: 2, maxPeople: 8, emoji: '🌳', depositAmount: 500 },
+            { id: 'barra', name: '🍻 Barra', minConsumption: 0, minPeople: 1, maxPeople: 2, emoji: '🍻', depositAmount: 500 },
+            { id: 'billar', name: '🎱 Billar', minConsumption: 0, minPeople: 2, maxPeople: 4, emoji: '🎱', depositAmount: 500 }
+        ],
+        
+        billarTables: [
+            { id: 'billar1', name: '🎱 Billar 1', available: true },
+            { id: 'billar2', name: '🎱 Billar 2', available: true }
+        ],
+        
+        availableTimes: [
+            '07:00', '08:00', '09:00', '10:00', '11:00', '12:00', 
+            '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', 
+            '19:00', '20:00', '21:00', '22:00', '23:00'
+        ],
+        
+        // Mensaje de bienvenida MODIFICADO - Ahora con botón
+        welcomeMessage: '🏈 ¡Hola! Soy **SportBot**, tu asistente virtual.\n\n¿Listo para reservar tu mesa en SportBar 23 y 12? 🍻'
+    };
 
     // ============================================
     // SISTEMA ANTI-SPAM
@@ -216,7 +216,7 @@ const CONFIG = {
     };
 
     // ============================================
-    // VALIDACIONES CORREGIDAS
+    // VALIDACIONES
     // ============================================
     const Validators = {
         name: function(text) {
@@ -254,14 +254,9 @@ const CONFIG = {
                 return { valid: false, message: '❌ Por favor seleccioná una fecha.' };
             }
             
-            // Crear fecha seleccionada (forzar mediodía para evitar problemas de zona horaria)
             const selectedDate = new Date(dateStr + 'T12:00:00');
-            
-            // Crear fecha de hoy
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-            
-            // Resetear la fecha seleccionada
             selectedDate.setHours(0, 0, 0, 0);
             
             if (selectedDate < today) {
@@ -279,12 +274,10 @@ const CONFIG = {
                 return { valid: false, message: '❌ Por favor seleccioná una hora.' };
             }
             
-            // Si no hay fecha, asumimos válido
             if (!dateStr) {
                 return { valid: true, value: timeStr };
             }
             
-            // Parsear la fecha (ej: "11 mar 2026")
             const partes = dateStr.split(' ');
             if (partes.length < 3) {
                 return { valid: true, value: timeStr };
@@ -304,27 +297,20 @@ const CONFIG = {
                 return { valid: true, value: timeStr };
             }
             
-            // Crear fecha de reserva
             const fechaReserva = new Date(anio, mes, dia);
             const [hours, minutes] = timeStr.split(':').map(Number);
-            
-            // Crear fecha de hoy
             const hoy = new Date();
             
-            // Si la fecha de reserva es mayor a hoy, cualquier hora es válida
             if (fechaReserva > hoy) {
                 return { valid: true, value: timeStr };
             }
             
-            // Si es el mismo día, validar hora
             if (fechaReserva.toDateString() === hoy.toDateString()) {
                 const horaActual = hoy.getHours();
                 const minutosActuales = hoy.getMinutes();
-                
                 const minutosSeleccionados = hours * 60 + minutes;
                 const minutosAhora = horaActual * 60 + minutosActuales;
                 
-                // Si la hora ya pasó (o es la misma hora)
                 if (minutosSeleccionados <= minutosAhora) {
                     return {
                         valid: false,
@@ -332,7 +318,6 @@ const CONFIG = {
                     };
                 }
                 
-                // Si falta menos de 1 hora, solo advertir
                 if (minutosSeleccionados - minutosAhora < 60) {
                     return {
                         valid: true,
@@ -396,7 +381,7 @@ const CONFIG = {
     // ESTADO DEL BOT
     // ============================================
     const BotState = {
-        currentStep: 0,
+        currentStep: -1, // -1 = esperando que inicie la reserva, 0 = pidiendo nombre
         bookingData: {
             name: '',
             zone: null,
@@ -409,7 +394,8 @@ const CONFIG = {
         },
         isWaitingResponse: false,
         errorCount: 0,
-        initialized: false
+        initialized: false,
+        reservationStarted: false // Nuevo flag
     };
 
     // ============================================
@@ -442,11 +428,64 @@ const CONFIG = {
         loadSavedData();
         setupEventListeners();
         focusInput();
-        addBotMessage(CONFIG.welcomeMessage);
+        
+        // Mostrar mensaje de bienvenida CON botón de comenzar
+        showWelcomeWithStartButton();
         
         console.log('✅ Bot inicializado correctamente');
-        console.log('📅 Fecha actual:', new Date().toLocaleString());
     }
+    
+    // NUEVA FUNCIÓN: Muestra bienvenida con botón "Comenzar Reserva"
+    function showWelcomeWithStartButton() {
+        const html = `
+            <p>${CONFIG.welcomeMessage}</p>
+            <div class="options-container" style="margin-top: 1rem;">
+                <button class="option-btn start-reservation-btn" onclick="window.startReservation()" 
+                        style="background: linear-gradient(135deg, #e63946, #c1121f); 
+                               border: none; 
+                               padding: 1rem 1.5rem; 
+                               font-size: 1.1rem;
+                               width: 100%;
+                               justify-content: center;">
+                    <i class="fas fa-calendar-check"></i> 📝 COMENZAR RESERVA
+                </button>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--gray); margin-top: 0.75rem;">
+                <i class="fas fa-robot"></i> Reservá tu mesa en pocos pasos
+            </p>
+        `;
+        addBotMessage(html, true);
+        
+        // Deshabilitar input hasta que comience la reserva
+        if (DOM.userInput) {
+            DOM.userInput.disabled = true;
+            DOM.userInput.placeholder = "👉 Presioná 'Comenzar Reserva' para iniciar";
+        }
+        if (DOM.sendButton) {
+            DOM.sendButton.disabled = true;
+        }
+    }
+    
+    // NUEVA FUNCIÓN: Inicia la reserva (se llama desde el botón)
+    window.startReservation = function() {
+        if (BotState.reservationStarted) return;
+        
+        BotState.reservationStarted = true;
+        BotState.currentStep = 0; // Ahora sí, paso de pedir nombre
+        
+        // Habilitar input
+        if (DOM.userInput) {
+            DOM.userInput.disabled = false;
+            DOM.userInput.placeholder = "Escribí tu respuesta...";
+            DOM.userInput.focus();
+        }
+        if (DOM.sendButton) {
+            DOM.sendButton.disabled = false;
+        }
+        
+        // Preguntar nombre
+        addBotMessage("¡Genial! 🎉 Comencemos.\n\n📝 ¿Cómo te llamas?");
+    };
 
     function setupEventListeners() {
         if (DOM.sendButton) {
@@ -460,7 +499,7 @@ const CONFIG = {
             
             DOM.userInput.addEventListener('input', () => {
                 if (DOM.sendButton) {
-                    DOM.sendButton.disabled = !DOM.userInput.value.trim();
+                    DOM.sendButton.disabled = !DOM.userInput.value.trim() || DOM.userInput.disabled;
                 }
             });
         }
@@ -475,6 +514,12 @@ const CONFIG = {
         
         const input = DOM.userInput.value.trim();
         if (!input || BotState.isWaitingResponse) return;
+        
+        // Si la reserva no ha comenzado, ignorar mensajes
+        if (!BotState.reservationStarted) {
+            addBotMessage("👉 Por favor, hacé clic en **'Comenzar Reserva'** para iniciar.");
+            return;
+        }
         
         if (!AntiSpam.registerMessage()) {
             addBotMessage('⏱️ Estás escribiendo muy rápido. Por favor, esperá un momento.');
@@ -583,7 +628,6 @@ const CONFIG = {
         const day = String(today.getDate()).padStart(2, '0');
         const todayFormatted = `${year}-${month}-${day}`;
         
-        // Fecha máxima: 3 meses después
         const maxDate = new Date();
         maxDate.setMonth(maxDate.getMonth() + 3);
         const maxYear = maxDate.getFullYear();
@@ -886,7 +930,7 @@ const CONFIG = {
     }
 
     function focusInput() {
-        if (DOM.userInput) {
+        if (DOM.userInput && !DOM.userInput.disabled) {
             DOM.userInput.focus();
         }
     }
@@ -899,7 +943,7 @@ const CONFIG = {
     }
 
     // ============================================
-    // FUNCIONES GLOBALES
+    // FUNCIONES GLOBALES (las que se llaman desde HTML)
     // ============================================
     window.selectZone = function(zoneId) {
         if (BotState.isWaitingResponse) return;
@@ -1024,7 +1068,8 @@ const CONFIG = {
     };
 
     window.resetConversation = function() {
-        BotState.currentStep = 0;
+        BotState.currentStep = -1;
+        BotState.reservationStarted = false;
         BotState.bookingData = {
             name: localStorage.getItem('sportbar_user_name') || '',
             zone: null,
@@ -1036,10 +1081,23 @@ const CONFIG = {
             paid: false
         };
         BotState.errorCount = 0;
+        
         if (DOM.messagesArea) {
             DOM.messagesArea.innerHTML = '';
         }
-        addBotMessage(CONFIG.welcomeMessage);
+        
+        // Deshabilitar input nuevamente
+        if (DOM.userInput) {
+            DOM.userInput.disabled = true;
+            DOM.userInput.placeholder = "👉 Presioná 'Comenzar Reserva' para iniciar";
+            DOM.userInput.value = '';
+        }
+        if (DOM.sendButton) {
+            DOM.sendButton.disabled = true;
+        }
+        
+        // Mostrar bienvenida con botón
+        showWelcomeWithStartButton();
     };
 
     // ============================================
