@@ -1,5 +1,5 @@
 /**
- * SPORTBAR 23 Y 12 - BOT VERSIÓN FINAL (con botón Comenzar Reserva)
+ * SPORTBAR 23 Y 12 - BOT VERSIÓN FINAL (con botón Comenzar Reserva + teclado optimizado)
  */
 
 (function() {
@@ -32,7 +32,6 @@
             '19:00', '20:00', '21:00', '22:00', '23:00'
         ],
         
-        // Mensaje de bienvenida MODIFICADO - Ahora con botón
         welcomeMessage: '🏈 ¡Hola! Soy **SportBot**, tu asistente virtual.\n\n¿Listo para reservar tu mesa en SportBar 23 y 12? 🍻'
     };
 
@@ -381,7 +380,7 @@
     // ESTADO DEL BOT
     // ============================================
     const BotState = {
-        currentStep: -1, // -1 = esperando que inicie la reserva, 0 = pidiendo nombre
+        currentStep: -1,
         bookingData: {
             name: '',
             zone: null,
@@ -395,7 +394,7 @@
         isWaitingResponse: false,
         errorCount: 0,
         initialized: false,
-        reservationStarted: false // Nuevo flag
+        reservationStarted: false
     };
 
     // ============================================
@@ -409,6 +408,63 @@
         typingIndicator: document.getElementById('typingIndicator'),
         chatContainer: document.getElementById('chatContainer')
     };
+
+    // ============================================
+    // FUNCIONES DE SCROLL MEJORADAS PARA MÓVIL
+    // ============================================
+    function scrollToBottom() {
+        if (DOM.chatContainer) {
+            DOM.chatContainer.scrollTop = DOM.chatContainer.scrollHeight;
+        }
+    }
+    
+    function scrollToInput() {
+        if (DOM.userInput && DOM.chatContainer) {
+            setTimeout(() => {
+                const inputRect = DOM.userInput.getBoundingClientRect();
+                const containerRect = DOM.chatContainer.getBoundingClientRect();
+                
+                if (inputRect.bottom > containerRect.bottom) {
+                    DOM.chatContainer.scrollTop += inputRect.bottom - containerRect.bottom + 20;
+                }
+                
+                const messages = DOM.messagesArea?.lastElementChild;
+                if (messages) {
+                    messages.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }, 100);
+        }
+    }
+    
+    function focusInput() {
+        if (DOM.userInput && !DOM.userInput.disabled) {
+            DOM.userInput.focus({ preventScroll: false });
+            setTimeout(() => scrollToInput(), 150);
+        }
+    }
+    
+    function setupKeyboardDetection() {
+        if (!DOM.userInput) return;
+        
+        let isKeyboardOpen = false;
+        let initialHeight = window.innerHeight;
+        
+        window.addEventListener('resize', () => {
+            const currentHeight = window.innerHeight;
+            const diff = initialHeight - currentHeight;
+            
+            if (diff > 150 && !isKeyboardOpen) {
+                isKeyboardOpen = true;
+                scrollToInput();
+            } 
+            else if (diff < 50 && isKeyboardOpen) {
+                isKeyboardOpen = false;
+                scrollToBottom();
+            }
+            
+            initialHeight = currentHeight;
+        });
+    }
 
     // ============================================
     // FUNCIONES PRINCIPALES
@@ -427,15 +483,13 @@
         BotState.initialized = true;
         loadSavedData();
         setupEventListeners();
-        focusInput();
+        setupKeyboardDetection();
         
-        // Mostrar mensaje de bienvenida CON botón de comenzar
         showWelcomeWithStartButton();
         
         console.log('✅ Bot inicializado correctamente');
     }
     
-    // NUEVA FUNCIÓN: Muestra bienvenida con botón "Comenzar Reserva"
     function showWelcomeWithStartButton() {
         const html = `
             <p>${CONFIG.welcomeMessage}</p>
@@ -446,7 +500,8 @@
                                padding: 1rem 1.5rem; 
                                font-size: 1.1rem;
                                width: 100%;
-                               justify-content: center;">
+                               justify-content: center;
+                               animation: pulse-glow 2s infinite;">
                     <i class="fas fa-calendar-check"></i> 📝 COMENZAR RESERVA
                 </button>
             </div>
@@ -456,7 +511,6 @@
         `;
         addBotMessage(html, true);
         
-        // Deshabilitar input hasta que comience la reserva
         if (DOM.userInput) {
             DOM.userInput.disabled = true;
             DOM.userInput.placeholder = "👉 Presioná 'Comenzar Reserva' para iniciar";
@@ -466,24 +520,21 @@
         }
     }
     
-    // NUEVA FUNCIÓN: Inicia la reserva (se llama desde el botón)
     window.startReservation = function() {
         if (BotState.reservationStarted) return;
         
         BotState.reservationStarted = true;
-        BotState.currentStep = 0; // Ahora sí, paso de pedir nombre
+        BotState.currentStep = 0;
         
-        // Habilitar input
         if (DOM.userInput) {
             DOM.userInput.disabled = false;
             DOM.userInput.placeholder = "Escribí tu respuesta...";
-            DOM.userInput.focus();
+            focusInput();
         }
         if (DOM.sendButton) {
             DOM.sendButton.disabled = false;
         }
         
-        // Preguntar nombre
         addBotMessage("¡Genial! 🎉 Comencemos.\n\n📝 ¿Cómo te llamas?");
     };
 
@@ -515,7 +566,6 @@
         const input = DOM.userInput.value.trim();
         if (!input || BotState.isWaitingResponse) return;
         
-        // Si la reserva no ha comenzado, ignorar mensajes
         if (!BotState.reservationStarted) {
             addBotMessage("👉 Por favor, hacé clic en **'Comenzar Reserva'** para iniciar.");
             return;
@@ -888,7 +938,9 @@
         
         div.innerHTML = html;
         DOM.messagesArea.appendChild(div);
+        
         scrollToBottom();
+        setTimeout(() => scrollToInput(), 50);
     }
 
     function addUserMessage(text) {
@@ -901,7 +953,9 @@
             <div class="message-content"><p>${escapeHTML(text)}</p></div>
         `;
         DOM.messagesArea.appendChild(div);
+        
         scrollToBottom();
+        setTimeout(() => scrollToInput(), 50);
     }
 
     function escapeHTML(text) {
@@ -923,18 +977,6 @@
         }
     }
 
-    function scrollToBottom() {
-        if (DOM.chatContainer) {
-            DOM.chatContainer.scrollTop = DOM.chatContainer.scrollHeight;
-        }
-    }
-
-    function focusInput() {
-        if (DOM.userInput && !DOM.userInput.disabled) {
-            DOM.userInput.focus();
-        }
-    }
-
     function loadSavedData() {
         try {
             const saved = localStorage.getItem('sportbar_user_name');
@@ -943,7 +985,7 @@
     }
 
     // ============================================
-    // FUNCIONES GLOBALES (las que se llaman desde HTML)
+    // FUNCIONES GLOBALES
     // ============================================
     window.selectZone = function(zoneId) {
         if (BotState.isWaitingResponse) return;
@@ -1086,7 +1128,6 @@
             DOM.messagesArea.innerHTML = '';
         }
         
-        // Deshabilitar input nuevamente
         if (DOM.userInput) {
             DOM.userInput.disabled = true;
             DOM.userInput.placeholder = "👉 Presioná 'Comenzar Reserva' para iniciar";
@@ -1096,7 +1137,6 @@
             DOM.sendButton.disabled = true;
         }
         
-        // Mostrar bienvenida con botón
         showWelcomeWithStartButton();
     };
 
