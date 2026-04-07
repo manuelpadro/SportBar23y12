@@ -1,5 +1,7 @@
 /**
- * SPORTBAR 23 Y 12 - BOT VERSIÓN FINAL (con scroll y teclado optimizados para móvil)
+ * SPORTBAR 23 Y 12 - BOT VERSIÓN FINAL OPTIMIZADA
+ * SIN BOTÓN "COMENZAR RESERVA" - INICIO DIRECTO
+ * CON MANEJO PERFECTO DEL TECLADO EN MÓVIL
  */
 
 (function() {
@@ -373,14 +375,15 @@
             `;
             
             addBotMessage(html, true);
+            setTimeout(() => focusInput(), 100);
         }
     };
 
     // ============================================
-    // ESTADO DEL BOT
+    // ESTADO DEL BOT - INICIO DIRECTO
     // ============================================
     const BotState = {
-        currentStep: -1,
+        currentStep: 0, // Comienza en 0 directamente
         bookingData: {
             name: '',
             zone: null,
@@ -393,8 +396,7 @@
         },
         isWaitingResponse: false,
         errorCount: 0,
-        initialized: false,
-        reservationStarted: false
+        initialized: false
     };
 
     // ============================================
@@ -412,49 +414,23 @@
     // ============================================
     // FUNCIONES DE SCROLL MEJORADAS PARA MÓVIL
     // ============================================
-    function forceScrollToElement(element) {
-        if (!element) return;
-        
-        // Múltiples métodos para asegurar el scroll
-        element.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'center',
-            inline: 'nearest'
-        });
-        
-        // Scroll adicional para Safari
-        setTimeout(() => {
-            const rect = element.getBoundingClientRect();
-            const windowHeight = window.innerHeight;
-            
-            if (rect.bottom > windowHeight - 100) {
-                window.scrollBy({
-                    top: rect.bottom - windowHeight + 100,
-                    behavior: 'smooth'
-                });
-            }
-            
-            if (rect.top < 50) {
-                window.scrollBy({
-                    top: rect.top - 50,
-                    behavior: 'smooth'
-                });
-            }
-        }, 50);
-    }
-    
-    function scrollToBottom() {
-        if (DOM.messagesArea) {
-            const lastMessage = DOM.messagesArea.lastElementChild;
-            if (lastMessage) {
-                forceScrollToElement(lastMessage);
-            }
-        }
-        
-        // Scroll del contenedor principal
+    function forceScrollToBottom() {
         if (DOM.chatContainer) {
             DOM.chatContainer.scrollTop = DOM.chatContainer.scrollHeight;
         }
+        
+        // Scroll adicional para asegurar
+        setTimeout(() => {
+            if (DOM.chatContainer) {
+                DOM.chatContainer.scrollTop = DOM.chatContainer.scrollHeight;
+            }
+        }, 50);
+        
+        setTimeout(() => {
+            if (DOM.chatContainer) {
+                DOM.chatContainer.scrollTop = DOM.chatContainer.scrollHeight;
+            }
+        }, 150);
     }
     
     function scrollToInput() {
@@ -467,43 +443,30 @@
                 block: 'center' 
             });
             
-            // Método 2: Scroll manual para Safari
+            // Método 2: Scroll manual
             setTimeout(() => {
                 const inputRect = DOM.userInput.getBoundingClientRect();
                 const windowHeight = window.innerHeight;
                 
                 if (inputRect.bottom > windowHeight - 50) {
-                    const scrollAmount = inputRect.bottom - windowHeight + 50;
                     window.scrollBy({
-                        top: scrollAmount,
+                        top: inputRect.bottom - windowHeight + 50,
                         behavior: 'smooth'
                     });
-                    
-                    if (DOM.chatContainer) {
-                        DOM.chatContainer.scrollTop += scrollAmount;
-                    }
                 }
                 
-                // Forzar focus después del scroll
-                DOM.userInput.focus({ preventScroll: true });
+                // Forzar focus
+                if (document.activeElement !== DOM.userInput) {
+                    DOM.userInput.focus({ preventScroll: true });
+                }
             }, 100);
-        }, 150);
+        }, 50);
     }
     
     function focusInput() {
         if (DOM.userInput && !DOM.userInput.disabled) {
-            // En iOS, necesitamos asegurar que el input sea focusable
             DOM.userInput.focus({ preventScroll: false });
-            
-            // Forzar scroll después del focus
             setTimeout(() => scrollToInput(), 100);
-            
-            // Para iOS, a veces necesita un segundo intento
-            setTimeout(() => {
-                if (document.activeElement !== DOM.userInput) {
-                    DOM.userInput.focus({ preventScroll: false });
-                }
-            }, 300);
         }
     }
     
@@ -512,59 +475,42 @@
         
         let isKeyboardOpen = false;
         let initialHeight = window.innerHeight;
-        let lastScrollTop = 0;
         
-        // Detectar cuando el teclado se abre/cierra
         window.addEventListener('resize', () => {
             const currentHeight = window.innerHeight;
             const diff = initialHeight - currentHeight;
             
             if (diff > 150 && !isKeyboardOpen) {
-                // Teclado abierto
                 isKeyboardOpen = true;
-                scrollToInput();
+                setTimeout(() => scrollToInput(), 50);
             } 
             else if (diff < 50 && isKeyboardOpen) {
-                // Teclado cerrado
                 isKeyboardOpen = false;
-                setTimeout(() => scrollToBottom(), 100);
+                setTimeout(() => forceScrollToBottom(), 100);
             }
             
             initialHeight = currentHeight;
         });
         
-        // Detectar scroll manual para mantener el input visible
-        window.addEventListener('scroll', () => {
-            if (isKeyboardOpen) {
-                const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop;
-                if (Math.abs(currentScrollTop - lastScrollTop) > 50) {
-                    scrollToInput();
-                }
-                lastScrollTop = currentScrollTop;
-            }
+        DOM.userInput.addEventListener('focus', () => {
+            setTimeout(() => scrollToInput(), 50);
         });
         
-        // Prevenir comportamiento por defecto en touch events
         DOM.userInput.addEventListener('touchstart', () => {
             setTimeout(() => scrollToInput(), 50);
         });
     }
     
-    // Función para ajustar el viewport en iOS
     function adjustViewportForiOS() {
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
         if (!isIOS) return;
         
-        // Forzar reflow para iOS
         document.body.style.transform = 'translateZ(0)';
         
-        // Escuchar cambios de orientación
         window.addEventListener('orientationchange', () => {
             setTimeout(() => {
-                scrollToBottom();
-                if (DOM.userInput && !DOM.userInput.disabled) {
-                    focusInput();
-                }
+                forceScrollToBottom();
+                focusInput();
             }, 100);
         });
     }
@@ -589,58 +535,21 @@
         setupKeyboardDetection();
         adjustViewportForiOS();
         
-        showWelcomeWithStartButton();
+        // Iniciar directamente sin botón de comenzar
+        showWelcomeAndStart();
         
         console.log('✅ Bot inicializado correctamente');
     }
     
-    function showWelcomeWithStartButton() {
-        const html = `
-            <p>${CONFIG.welcomeMessage}</p>
-            <div class="options-container" style="margin-top: 1rem;">
-                <button class="option-btn start-reservation-btn" onclick="window.startReservation()" 
-                        style="background: linear-gradient(135deg, #e63946, #c1121f); 
-                               border: none; 
-                               padding: 1rem 1.5rem; 
-                               font-size: 1.1rem;
-                               width: 100%;
-                               justify-content: center;
-                               animation: pulse-glow 2s infinite;">
-                    <i class="fas fa-calendar-check"></i> 📝 COMENZAR RESERVA
-                </button>
-            </div>
-            <p style="font-size: 0.85rem; color: var(--gray); margin-top: 0.75rem;">
-                <i class="fas fa-robot"></i> Reservá tu mesa en pocos pasos
-            </p>
-        `;
-        addBotMessage(html, true);
+    function showWelcomeAndStart() {
+        addBotMessage(CONFIG.welcomeMessage);
         
-        if (DOM.userInput) {
-            DOM.userInput.disabled = true;
-            DOM.userInput.placeholder = "👉 Presioná 'Comenzar Reserva' para iniciar";
-        }
-        if (DOM.sendButton) {
-            DOM.sendButton.disabled = true;
-        }
-    }
-    
-    window.startReservation = function() {
-        if (BotState.reservationStarted) return;
-        
-        BotState.reservationStarted = true;
-        BotState.currentStep = 0;
-        
-        if (DOM.userInput) {
-            DOM.userInput.disabled = false;
-            DOM.userInput.placeholder = "Escribí tu respuesta...";
+        setTimeout(() => {
+            addBotMessage("📝 **Vamos a empezar con tu reserva**\n\n¿Cómo te llamas?");
+            BotState.currentStep = 0;
             focusInput();
-        }
-        if (DOM.sendButton) {
-            DOM.sendButton.disabled = false;
-        }
-        
-        addBotMessage("¡Genial! 🎉 Comencemos.\n\n📝 ¿Cómo te llamas?");
-    };
+        }, 1000);
+    }
 
     function setupEventListeners() {
         if (DOM.sendButton) {
@@ -654,13 +563,8 @@
             
             DOM.userInput.addEventListener('input', () => {
                 if (DOM.sendButton) {
-                    DOM.sendButton.disabled = !DOM.userInput.value.trim() || DOM.userInput.disabled;
+                    DOM.sendButton.disabled = !DOM.userInput.value.trim();
                 }
-            });
-            
-            // Evento especial para iOS
-            DOM.userInput.addEventListener('focus', () => {
-                setTimeout(() => scrollToInput(), 50);
             });
         }
         
@@ -674,11 +578,6 @@
         
         const input = DOM.userInput.value.trim();
         if (!input || BotState.isWaitingResponse) return;
-        
-        if (!BotState.reservationStarted) {
-            addBotMessage("👉 Por favor, hacé clic en **'Comenzar Reserva'** para iniciar.");
-            return;
-        }
         
         if (!AntiSpam.registerMessage()) {
             addBotMessage('⏱️ Estás escribiendo muy rápido. Por favor, esperá un momento.');
@@ -719,10 +618,10 @@
                     if (BotState.errorCount > 2) {
                         addBotMessage('¿Necesitás ayuda? Podés reiniciar con el botón 🔄');
                     }
+                    focusInput();
             }
             
             BotState.isWaitingResponse = false;
-            focusInput();
             
         }, 800);
     }
@@ -734,6 +633,7 @@
             addBotMessage(validation.message + ' 😅');
             AntiSpam.registerFailedAttempt('nombre_invalido');
             BotState.errorCount++;
+            focusInput();
             return;
         }
         
@@ -771,6 +671,7 @@
             addBotMessage(validation.message + ' 😅');
             AntiSpam.registerFailedAttempt('personas_invalidas');
             BotState.errorCount++;
+            focusInput();
             return;
         }
         
@@ -844,6 +745,7 @@
         }
         
         addBotMessage(mensaje);
+        focusInput();
     }
 
     function showBillarOptions() {
@@ -998,6 +900,7 @@
         
         addBotMessage(html, true);
         addBotMessage('🎉 ¡Gracias por elegir SportBar 23 y 12!');
+        focusInput();
     }
 
     function generateWhatsAppMessage() {
@@ -1048,8 +951,8 @@
         div.innerHTML = html;
         DOM.messagesArea.appendChild(div);
         
-        scrollToBottom();
-        setTimeout(() => scrollToInput(), 100);
+        forceScrollToBottom();
+        setTimeout(() => focusInput(), 100);
     }
 
     function addUserMessage(text) {
@@ -1063,8 +966,7 @@
         `;
         DOM.messagesArea.appendChild(div);
         
-        scrollToBottom();
-        setTimeout(() => scrollToInput(), 100);
+        forceScrollToBottom();
     }
 
     function escapeHTML(text) {
@@ -1076,7 +978,7 @@
     function showTypingIndicator() {
         if (DOM.typingIndicator) {
             DOM.typingIndicator.classList.add('active');
-            scrollToBottom();
+            forceScrollToBottom();
         }
     }
 
@@ -1212,15 +1114,16 @@
             reservas[reservas.length - 1].paid = true;
             localStorage.setItem('sportbar_reservas', JSON.stringify(reservas));
         }
+        focusInput();
     };
 
     window.payLater = function() {
         addBotMessage('✅ Podés pagar la señal cuando llegues al SportBar. ¡Te esperamos!');
+        focusInput();
     };
 
     window.resetConversation = function() {
-        BotState.currentStep = -1;
-        BotState.reservationStarted = false;
+        BotState.currentStep = 0;
         BotState.bookingData = {
             name: localStorage.getItem('sportbar_user_name') || '',
             zone: null,
@@ -1238,15 +1141,19 @@
         }
         
         if (DOM.userInput) {
-            DOM.userInput.disabled = true;
-            DOM.userInput.placeholder = "👉 Presioná 'Comenzar Reserva' para iniciar";
+            DOM.userInput.disabled = false;
             DOM.userInput.value = '';
+            DOM.userInput.placeholder = "Escribí tu respuesta...";
         }
         if (DOM.sendButton) {
-            DOM.sendButton.disabled = true;
+            DOM.sendButton.disabled = false;
         }
         
-        showWelcomeWithStartButton();
+        addBotMessage(CONFIG.welcomeMessage);
+        setTimeout(() => {
+            addBotMessage("📝 **Vamos a empezar con tu reserva**\n\n¿Cómo te llamas?");
+            focusInput();
+        }, 1000);
     };
 
     // ============================================
