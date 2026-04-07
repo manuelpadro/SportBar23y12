@@ -1,5 +1,5 @@
 /**
- * SPORTBAR 23 Y 12 - BOT VERSIÓN FINAL (con botón Comenzar Reserva + teclado optimizado)
+ * SPORTBAR 23 Y 12 - BOT VERSIÓN FINAL (con scroll y teclado optimizados para móvil)
  */
 
 (function() {
@@ -412,34 +412,98 @@
     // ============================================
     // FUNCIONES DE SCROLL MEJORADAS PARA MÓVIL
     // ============================================
+    function forceScrollToElement(element) {
+        if (!element) return;
+        
+        // Múltiples métodos para asegurar el scroll
+        element.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center',
+            inline: 'nearest'
+        });
+        
+        // Scroll adicional para Safari
+        setTimeout(() => {
+            const rect = element.getBoundingClientRect();
+            const windowHeight = window.innerHeight;
+            
+            if (rect.bottom > windowHeight - 100) {
+                window.scrollBy({
+                    top: rect.bottom - windowHeight + 100,
+                    behavior: 'smooth'
+                });
+            }
+            
+            if (rect.top < 50) {
+                window.scrollBy({
+                    top: rect.top - 50,
+                    behavior: 'smooth'
+                });
+            }
+        }, 50);
+    }
+    
     function scrollToBottom() {
+        if (DOM.messagesArea) {
+            const lastMessage = DOM.messagesArea.lastElementChild;
+            if (lastMessage) {
+                forceScrollToElement(lastMessage);
+            }
+        }
+        
+        // Scroll del contenedor principal
         if (DOM.chatContainer) {
             DOM.chatContainer.scrollTop = DOM.chatContainer.scrollHeight;
         }
     }
     
     function scrollToInput() {
-        if (DOM.userInput && DOM.chatContainer) {
+        if (!DOM.userInput) return;
+        
+        setTimeout(() => {
+            // Método 1: scrollIntoView
+            DOM.userInput.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'center' 
+            });
+            
+            // Método 2: Scroll manual para Safari
             setTimeout(() => {
                 const inputRect = DOM.userInput.getBoundingClientRect();
-                const containerRect = DOM.chatContainer.getBoundingClientRect();
+                const windowHeight = window.innerHeight;
                 
-                if (inputRect.bottom > containerRect.bottom) {
-                    DOM.chatContainer.scrollTop += inputRect.bottom - containerRect.bottom + 20;
+                if (inputRect.bottom > windowHeight - 50) {
+                    const scrollAmount = inputRect.bottom - windowHeight + 50;
+                    window.scrollBy({
+                        top: scrollAmount,
+                        behavior: 'smooth'
+                    });
+                    
+                    if (DOM.chatContainer) {
+                        DOM.chatContainer.scrollTop += scrollAmount;
+                    }
                 }
                 
-                const messages = DOM.messagesArea?.lastElementChild;
-                if (messages) {
-                    messages.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                }
+                // Forzar focus después del scroll
+                DOM.userInput.focus({ preventScroll: true });
             }, 100);
-        }
+        }, 150);
     }
     
     function focusInput() {
         if (DOM.userInput && !DOM.userInput.disabled) {
+            // En iOS, necesitamos asegurar que el input sea focusable
             DOM.userInput.focus({ preventScroll: false });
-            setTimeout(() => scrollToInput(), 150);
+            
+            // Forzar scroll después del focus
+            setTimeout(() => scrollToInput(), 100);
+            
+            // Para iOS, a veces necesita un segundo intento
+            setTimeout(() => {
+                if (document.activeElement !== DOM.userInput) {
+                    DOM.userInput.focus({ preventScroll: false });
+                }
+            }, 300);
         }
     }
     
@@ -448,21 +512,60 @@
         
         let isKeyboardOpen = false;
         let initialHeight = window.innerHeight;
+        let lastScrollTop = 0;
         
+        // Detectar cuando el teclado se abre/cierra
         window.addEventListener('resize', () => {
             const currentHeight = window.innerHeight;
             const diff = initialHeight - currentHeight;
             
             if (diff > 150 && !isKeyboardOpen) {
+                // Teclado abierto
                 isKeyboardOpen = true;
                 scrollToInput();
             } 
             else if (diff < 50 && isKeyboardOpen) {
+                // Teclado cerrado
                 isKeyboardOpen = false;
-                scrollToBottom();
+                setTimeout(() => scrollToBottom(), 100);
             }
             
             initialHeight = currentHeight;
+        });
+        
+        // Detectar scroll manual para mantener el input visible
+        window.addEventListener('scroll', () => {
+            if (isKeyboardOpen) {
+                const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                if (Math.abs(currentScrollTop - lastScrollTop) > 50) {
+                    scrollToInput();
+                }
+                lastScrollTop = currentScrollTop;
+            }
+        });
+        
+        // Prevenir comportamiento por defecto en touch events
+        DOM.userInput.addEventListener('touchstart', () => {
+            setTimeout(() => scrollToInput(), 50);
+        });
+    }
+    
+    // Función para ajustar el viewport en iOS
+    function adjustViewportForiOS() {
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        if (!isIOS) return;
+        
+        // Forzar reflow para iOS
+        document.body.style.transform = 'translateZ(0)';
+        
+        // Escuchar cambios de orientación
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                scrollToBottom();
+                if (DOM.userInput && !DOM.userInput.disabled) {
+                    focusInput();
+                }
+            }, 100);
         });
     }
 
@@ -484,6 +587,7 @@
         loadSavedData();
         setupEventListeners();
         setupKeyboardDetection();
+        adjustViewportForiOS();
         
         showWelcomeWithStartButton();
         
@@ -552,6 +656,11 @@
                 if (DOM.sendButton) {
                     DOM.sendButton.disabled = !DOM.userInput.value.trim() || DOM.userInput.disabled;
                 }
+            });
+            
+            // Evento especial para iOS
+            DOM.userInput.addEventListener('focus', () => {
+                setTimeout(() => scrollToInput(), 50);
             });
         }
         
@@ -940,7 +1049,7 @@
         DOM.messagesArea.appendChild(div);
         
         scrollToBottom();
-        setTimeout(() => scrollToInput(), 50);
+        setTimeout(() => scrollToInput(), 100);
     }
 
     function addUserMessage(text) {
@@ -955,7 +1064,7 @@
         DOM.messagesArea.appendChild(div);
         
         scrollToBottom();
-        setTimeout(() => scrollToInput(), 50);
+        setTimeout(() => scrollToInput(), 100);
     }
 
     function escapeHTML(text) {
