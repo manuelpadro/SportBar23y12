@@ -864,3 +864,32 @@ body {
         font-size: 16px;
     }
 }
+
+/* CSS adicional para mejorar el scroll en móvil */
+#chatContainer {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    height: 100%;
+    position: relative;
+}
+
+.message:last-child {
+    margin-bottom: 1rem;
+}
+
+/* Asegurar que el input sea visible cuando el teclado está abierto */
+.input-container {
+    position: sticky;
+    bottom: 0;
+    background: var(--dark);
+    padding: 1rem;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    z-index: 10;
+}
+
+/* Para iOS, evitar zoom automático en inputs */
+@media screen and (max-width: 768px) {
+    input, textarea, select {
+        font-size: 16px !important;
+    }
+}
